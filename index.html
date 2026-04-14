@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Code CLI Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-cyan: #00f5ff;
+            --neon-purple: #b829f7;
+            --neon-pink: #ff2d95;
+            --dark-bg: #0a0a0f;
+            --card-bg: rgba(15, 15, 25, 0.8);
+            --border-glow: rgba(0, 245, 255, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--dark-bg);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Animated background grid */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-grid::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(0, 245, 255, 0.08) 0%, transparent 50%);
+        }
+
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: float 15s infinite linear;
+            box-shadow: 0 0 6px var(--neon-cyan);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            15% { opacity: 0.4; }
+            85% { opacity: 0.4; }
+            100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+        }
+
+        /* Glass card effect */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+            opacity: 0.5;
+        }
+
+        /* Glow effects */
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(0, 245, 255, 0.15), inset 0 0 20px rgba(0, 245, 255, 0.05);
+        }
+
+        /* Status indicators */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .status-running {
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+
+        .status-waiting {
+            background: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b;
+        }
+
+        .status-idle {
+            background: #6b7280;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Progress bars */
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Terminal text effect */
+        .terminal-text {
+            color: #a0a0a0;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .terminal-text .prompt {
+            color: var(--neon-cyan);
+        }
+
+        .terminal-text .command {
+            color: #e0e0e0;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 245, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 245, 255, 0.5);
+        }
+
+        /* Header decoration */
+        .header-accent {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Session item container */
+        .session-item {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+            contain: layout;
+        }
+
+        /* Compact card - small narrow card style */
+        .session-card-compact {
+            padding: 12px 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 130px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .session-card-compact:hover {
+            border-color: rgba(0, 245, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Mini progress bar for compact view */
+        .progress-bar.h-1\.5 {
+            height: 4px;
+        }
+
+        /* Floating card (centered) */
+        .session-item.floating {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            width: 90%;
+            max-width: 500px;
+            animation: floatIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .session-item.floating .session-card-compact {
+            padding: 20px;
+        }
+
+        .session-item.dimmed {
+            z-index: 1;
+        }
+
+        @keyframes floatIn {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        /* Backdrop */
+        .backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .backdrop.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Other cards dimmed when one is floating */
+        .session-item.dimmed {
+            opacity: 0.3;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        /* Close button in floating card */
+        .close-float {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .close-float:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Counter animation */
+        .counter {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Scanline effect - disabled to reduce flickering */
+        .scanline {
+            display: none;
+        }
+
+        /* Message styles */
+        .msg-user { border-left: 2px solid var(--neon-cyan); }
+        .msg-assistant { border-left: 2px solid var(--neon-purple); }
+        .msg-confirm {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <div class="scanline"></div>
+    <div class="bg-grid"></div>
+    <div class="particles" id="particles"></div>
+
+    <script>
+        // Generate floating particles - reduced count for better performance
+        function initParticles() {
+            const container = document.getElementById('particles');
+            // Reduce particles from 30 to 15 to minimize GPU load and flickering
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 15) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Real data from Claude Code CLI
+        let sessionsData = { sessions: [], timestamp: null };
+        let useMock = false;
+
+        // Fetch real data from API
+        async function fetchRealData() {
+            try {
+                const response = await fetch('/api/sessions');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.sessions && data.sessions.length > 0) {
+                        sessionsData = data;
+                        useMock = false;
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.log('Using mock data');
+            }
+            useMock = true;
+            return false;
+        }
+
+        // Mock data fallback
+        const mockSessions = [
+            {
+                id: 'session-001',
+                pid: 45231,
+                status: 'running',
+                startTime: Date.now() - 45 * 60 * 1000,
+                workDir: '/Users/kane/projects/frontend-app',
+                model: 'claude-sonnet-4-6',
+                contextUsed: 78,
+                contextTotal: 200,
+                tokensInput: 45231,
+                tokensOutput: 18432,
+                source: 'terminal',
+                recentMessages: [
+                    { type: 'user', content: '帮我优化这个 React 组件的性能', time: '2分钟前' },
+                    { type: 'assistant', content: '我来分析一下组件的渲染情况...', time: '2分钟前' },
+                    { type: 'user', content: '看起来 useEffect 有依赖问题', time: '5分钟前' },
+                    { type: 'assistant', content: '是的，我发现了一个无限循环的依赖', time: '5分钟前' },
+                    { type: 'user', content: '怎么修复呢？', time: '8分钟前' },
+                ]
+            },
+            {
+                id: 'session-002',
+                pid: 45289,
+                status: 'waiting',
+                startTime: Date.now() - 12 * 60 * 1000,
+                workDir: '/Users/kane/projects/backend-api',
+                model: 'claude-opus-4-6',
+                contextUsed: 45,
+                contextTotal: 200,
+                tokensInput: 12834,
+                tokensOutput: 5632,
+                source: 'vscode',
+                recentMessages: [
+                    { type: 'confirm', content: '我需要确认：是否允许我修改数据库配置？', time: '刚刚' },
+                    { type: 'user', content: '检查数据库连接问题', time: '3分钟前' },
+                    { type: 'assistant', content: '发现了连接池配置错误', time: '3分钟前' },
+                    { type: 'user', content: '怎么修复？', time: '5分钟前' },
+                    { type: 'assistant', content: '建议调整 max_connections 参数', time: '5分钟前' },
+                ]
+            },
+            {
+                id: 'session-003',
+                pid: 45312,
+                status: 'idle',
+                startTime: Date.now() - 2 * 60 * 60 * 1000,
+                workDir: '/Users/kane/projects/ml-pipeline',
+                model: 'claude-sonnet-4-6',
+                contextUsed: 23,
+                contextTotal: 200,
+                tokensInput: 89321,
+                tokensOutput: 34218,
+                source: 'terminal',
+                recentMessages: [
+                    { type: 'user', content: '谢谢，问题解决了', time: '30分钟前' },
+                    { type: 'assistant', content: '不客气！有其他问题随时问我', time: '30分钟前' },
+                    { type: 'user', content: '优化完成了，测试通过', time: '35分钟前' },
+                    { type: 'assistant', content: '太好了！性能提升了多少？', time: '35分钟前' },
+                    { type: 'user', content: '批处理速度提升了40%', time: '40分钟前' },
+                ]
+            },
+            {
+                id: 'session-004',
+                pid: 45345,
+                status: 'running',
+                startTime: Date.now() - 8 * 60 * 1000,
+                workDir: '/Users/kane/projects/dashboard-ui',
+                model: 'claude-sonnet-4-6',
+                contextUsed: 34,
+                contextTotal: 200,
+                tokensInput: 5672,
+                tokensOutput: 2841,
+                source: 'vscode',
+                recentMessages: [
+                    { type: 'user', content: '添加一个实时数据图表组件', time: '1分钟前' },
+                    { type: 'assistant', content: '我来创建一个带有动画效果的图表...', time: '1分钟前' },
+                    { type: 'user', content: '用渐变色彩', time: '4分钟前' },
+                    { type: 'assistant', content: '好的，使用霓虹蓝到紫的渐变', time: '4分钟前' },
+                    { type: 'user', content: '开始吧', time: '5分钟前' },
+                ]
+            }
+        ];
+
+        // Get sessions - real or mock, 按工作目录名称字母顺序稳定排列
+        function getSessions() {
+            const sessions = useMock ? mockSessions : sessionsData.sessions;
+            return sessions.slice().sort((a, b) => a.workDir.localeCompare(b.workDir));
+        }
+
+        // Initial fetch
+        fetchRealData();
+
+        // Format duration
+        function formatDuration(startTime) {
+            const diff = Date.now() - startTime;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+            return `${minutes}m ${seconds}s`;
+        }
+
+        // Format numbers
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        // Get status config
+        function getStatusConfig(status) {
+            const configs = {
+                running: { dot: 'status-running', text: '执行中', color: 'text-emerald-400' },
+                waiting: { dot: 'status-waiting', text: '等待确认', color: 'text-amber-400' },
+                idle: { dot: 'status-idle', text: '空闲', color: 'text-gray-400' }
+            };
+            return configs[status] || configs.idle;
+        }
+
+        // Get context bar color
+        function getContextColor(percentage) {
+            if (percentage > 80) return 'bg-red-500';
+            if (percentage > 60) return 'bg-amber-500';
+            return 'bg-gradient-to-r from-cyan-500 to-purple-500';
+        }
+
+        // Get message class
+        function getMsgClass(type) {
+            if (type === 'user') return 'msg-user';
+            if (type === 'confirm') return 'msg-user msg-confirm';
+            return 'msg-assistant';
+        }
+
+        // Get source badge config
+        function getSourceBadge(source) {
+            if (source === 'vscode') {
+                return { icon: '📎', text: 'VS Code', color: 'text-blue-400 bg-blue-400/10 border-blue-400/30' };
+            }
+            return { icon: '⌨️', text: 'Terminal', color: 'text-green-400 bg-green-400/10 border-green-400/30' };
+        }
+
+        // Render session card - small narrow card style
+        function renderSessionCard(session) {
+            const statusConfig = getStatusConfig(session.status);
+            // server 已返回 0-100 的百分比，contextTotal 固定为 100，无需再除
+            const contextPercentage = session.contextUsed;
+            const contextColor = getContextColor(contextPercentage);
+
+            return `
+                <div class="session-item" data-session-id="${session.id}">
+                    <div class="glass-card session-card-compact glow-cyan" onclick="floatSession('${session.id}')">
+                        <!-- Top: Icon + Status -->
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center border border-cyan-500/30">
+                                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <div class="status-dot ${statusConfig.dot}" data-field="status-dot"></div>
+                                <span class="text-[10px] font-medium ${statusConfig.color}" data-field="status-text">${statusConfig.text}</span>
+                            </div>
+                        </div>
+
+                        <!-- Middle: Session Info -->
+                        <div class="mb-2">
+                            <p class="text-cyan-300 font-mono text-xs truncate">${session.workDir.split('/').pop()}</p>
+                            <h3 class="font-medium text-gray-500 text-xs truncate">${session.id}</h3>
+                        </div>
+
+                        <!-- Source Badge -->
+                        <div class="mb-2">
+                            <span class="text-[10px] px-1.5 py-0.5 rounded border ${getSourceBadge(session.source).color}">
+                                ${getSourceBadge(session.source).icon} ${getSourceBadge(session.source).text}
+                            </span>
+                        </div>
+
+                        <!-- Stats Row -->
+                        <div class="flex justify-between items-center text-[10px] mb-2">
+                            <span class="font-mono text-cyan-300" data-duration="${session.startTime}">${formatDuration(session.startTime)}</span>
+                            <span class="text-gray-500" data-field="token-total">${formatNumber(session.tokensInput + session.tokensOutput)}t</span>
+                        </div>
+
+                        <!-- Bottom: Context Bar -->
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1">
+                                <div class="progress-bar h-1">
+                                    <div class="progress-fill ${contextColor}" style="width: ${contextPercentage}%" data-field="context-fill"></div>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-gray-500 font-mono whitespace-nowrap" data-field="context-pct">${session.contextUsed}%</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 确认/拒绝操作
+        async function confirmAction(sessionId, action) {
+            const btn = document.querySelector(`[data-action-btn="${sessionId}-${action}"]`);
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '发送中…';
+            }
+            try {
+                const res = await fetch(`/api/sessions/${sessionId}/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    // 操作成功：关闭浮动卡片，等下次轮询更新状态
+                    closeFloat({ stopPropagation: () => {} }, sessionId);
+                } else {
+                    // 失败：展示错误提示
+                    const errEl = document.getElementById(`action-error-${sessionId}`);
+                    if (errEl) {
+                        errEl.textContent = `操作失败：${data.error}`;
+                        errEl.classList.remove('hidden');
+                    }
+                    if (btn) { btn.disabled = false; btn.textContent = action === 'confirm' ? '确认' : '拒绝'; }
+                }
+            } catch (e) {
+                const errEl = document.getElementById(`action-error-${sessionId}`);
+                if (errEl) { errEl.textContent = `请求失败：${e.message}`; errEl.classList.remove('hidden'); }
+                if (btn) { btn.disabled = false; btn.textContent = action === 'confirm' ? '确认' : '拒绝'; }
+            }
+        }
+
+        // 格式化 tool input 为可读内容
+        function formatToolInput(name, input) {
+            if (!input) return '';
+            if (name === 'Bash' && input.command) {
+                return `<code class="block text-xs font-mono text-amber-300 bg-black/30 rounded p-2 mt-1 whitespace-pre-wrap break-all">${escHtml(input.command)}</code>` +
+                    (input.description ? `<p class="text-xs text-gray-500 mt-1">${escHtml(input.description)}</p>` : '');
+            }
+            if ((name === 'Read' || name === 'Write' || name === 'Edit') && input.file_path) {
+                return `<p class="text-xs font-mono text-cyan-300 mt-1">${escHtml(input.file_path)}</p>`;
+            }
+            if (name === 'Glob' && input.pattern) {
+                return `<p class="text-xs font-mono text-cyan-300 mt-1">${escHtml(input.pattern)}</p>`;
+            }
+            if (name === 'Grep' && input.pattern) {
+                return `<p class="text-xs font-mono text-cyan-300 mt-1">${escHtml(input.pattern)}</p>` +
+                    (input.path ? `<p class="text-xs text-gray-500">in ${escHtml(input.path)}</p>` : '');
+            }
+            // 其余工具：展示全部 input 字段
+            return `<pre class="text-xs font-mono text-gray-400 bg-black/30 rounded p-2 mt-1 overflow-x-auto max-h-24">${escHtml(JSON.stringify(input, null, 2))}</pre>`;
+        }
+
+        function escHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // 工具图标
+        function toolIcon(name) {
+            const icons = {
+                Bash: '⚡', Read: '📖', Write: '✏️', Edit: '✏️',
+                Glob: '🔍', Grep: '🔎', Agent: '🤖', WebFetch: '🌐',
+                WebSearch: '🌐', Task: '📋'
+            };
+            return icons[name] || '🔧';
+        }
+
+        // 渲染待确认区块（仅 waiting 状态时展示）
+        function renderPendingConfirmation(session) {
+            if (session.status !== 'waiting') return '';
+
+            let toolsHtml = '';
+            if (session.pendingTools?.length) {
+                toolsHtml = session.pendingTools.map(tool => `
+                    <div class="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 mb-2">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-base">${toolIcon(tool.name)}</span>
+                            <span class="text-sm font-semibold text-amber-300">${escHtml(tool.name)}</span>
+                        </div>
+                        ${formatToolInput(tool.name, tool.input)}
+                    </div>
+                `).join('');
+            } else {
+                toolsHtml = `
+                    <div class="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 mb-2">
+                        <p class="text-xs text-gray-400 leading-relaxed">
+                            当前模型提供商（如 Bedrock / OpenRouter）对工具调用内容做了隐藏，
+                            无法在此展示具体请求详情。
+                            <span class="text-amber-300">请到原终端窗口查看完整内容后再操作。</span>
+                        </p>
+                        <p class="text-[10px] text-gray-500 mt-1">提示：Dashboard 将尝试通过 AppleScript 向 Terminal.app / iTerm 发送按键 <span class="text-gray-300">1</span>（确认一次）或 <span class="text-gray-300">3</span>（拒绝）</p>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="mb-4 rounded-xl border border-amber-500/40 bg-amber-500/8 p-4"
+                     style="background:rgba(245,158,11,0.07);">
+                    <div class="flex items-center gap-2 mb-3 pr-10">
+                        <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        </svg>
+                        <span class="text-sm font-semibold text-amber-400">等待确认</span>
+                        <span class="text-xs text-gray-500 ml-auto">Claude 请求执行以下操作</span>
+                    </div>
+
+                    ${toolsHtml}
+
+                    <p id="action-error-${session.id}" class="hidden text-xs text-red-400 mt-2 mb-2"></p>
+
+                    <div class="flex gap-3 mt-3">
+                        <button
+                            data-action-btn="${session.id}-confirm"
+                            onclick="confirmAction('${session.id}', 'confirm')"
+                            class="flex-1 py-2 rounded-lg text-sm font-semibold
+                                   bg-emerald-500/20 border border-emerald-500/50 text-emerald-400
+                                   hover:bg-emerald-500/30 transition-all cursor-pointer">
+                            ✓ 确认执行
+                        </button>
+                        <button
+                            data-action-btn="${session.id}-reject"
+                            onclick="confirmAction('${session.id}', 'reject')"
+                            class="flex-1 py-2 rounded-lg text-sm font-semibold
+                                   bg-red-500/20 border border-red-500/50 text-red-400
+                                   hover:bg-red-500/30 transition-all cursor-pointer">
+                            ✗ 拒绝
+                        </button>
+                    </div>
+                </div>`;
+        }
+
+        // Render context breakdown for floating card
+        function renderContextBreakdown(session) {
+            const bd = session.contextBreakdown;
+            if (!bd || !bd.maxContext) {
+                // 兜底：无数据时展示简单进度条
+                return `
+                    <div class="mb-4">
+                        <div class="flex justify-between text-xs mb-2">
+                            <span class="text-gray-400">Context 使用</span>
+                            <span class="font-mono text-cyan-400">${session.contextUsed}%</span>
+                        </div>
+                        <div class="progress-bar h-2">
+                            <div class="progress-fill ${getContextColor(session.contextUsed)}" style="width:${session.contextUsed}%"></div>
+                        </div>
+                    </div>`;
+            }
+
+            const maxCtx   = bd.maxContext;
+            const total    = bd.total;
+            const msgTok   = bd.messages;
+            const sysTok   = bd.system;
+            const freeTok  = bd.free;
+
+            const pct  = v => Math.min(100, Math.round(v / maxCtx * 100));
+            const fmt  = v => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v.toString();
+
+            // 叠加色块：消息(青) + 系统(紫) + 空闲(灰)
+            const msgPct  = pct(msgTok);
+            const sysPct  = pct(sysTok);
+            const freePct = pct(freeTok);
+
+            const rows = [
+                { label: '消息记录', tag: '(估算)', tok: msgTok,  pctV: msgPct,  color: 'from-cyan-500 to-cyan-400',     dot: 'bg-cyan-400' },
+                { label: '系统/工具', tag: '(估算)', tok: sysTok,  pctV: sysPct,  color: 'from-purple-500 to-purple-400', dot: 'bg-purple-400' },
+                { label: '空闲',      tag: '',        tok: freeTok, pctV: freePct, color: 'from-gray-700 to-gray-600',     dot: 'bg-gray-500' },
+            ];
+
+            const rowsHtml = rows.map(r => `
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full flex-shrink-0 ${r.dot}"></div>
+                    <span class="text-xs text-gray-400 w-20 flex-shrink-0">${r.label} <span class="text-gray-600">${r.tag}</span></span>
+                    <div class="flex-1 progress-bar h-1.5">
+                        <div class="progress-fill bg-gradient-to-r ${r.color}" style="width:${r.pctV}%"></div>
+                    </div>
+                    <span class="font-mono text-xs text-gray-400 w-16 text-right flex-shrink-0">${fmt(r.tok)} <span class="text-gray-600">${r.pctV}%</span></span>
+                </div>
+            `).join('');
+
+            return `
+                <div class="mb-4 p-3 rounded-lg bg-white/5">
+                    <div class="flex justify-between items-baseline mb-2">
+                        <span class="text-xs text-gray-400">Context 使用</span>
+                        <span class="font-mono text-sm ${getContextColor(session.contextUsed).replace('bg-','text-').replace('bg-gradient-to-r from-cyan-500 to-purple-500','text-cyan-400')}">
+                            ${fmt(total)} / ${fmt(maxCtx)} &nbsp;<span class="text-gray-500">${session.contextUsed}%</span>
+                        </span>
+                    </div>
+                    <!-- 总量叠加色块 -->
+                    <div class="relative h-3 rounded-full overflow-hidden bg-white/5 mb-3 flex">
+                        <div class="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 transition-all" style="width:${msgPct}%"></div>
+                        <div class="h-full bg-gradient-to-r from-purple-500 to-purple-400 transition-all" style="width:${sysPct}%"></div>
+                        <div class="h-full bg-white/10 transition-all flex-1"></div>
+                    </div>
+                    <!-- 分类明细 -->
+                    <div class="space-y-1.5">
+                        ${rowsHtml}
+                    </div>
+                </div>`;
+        }
+
+        // Float session to center
+        function floatSession(sessionId) {
+            const item = document.querySelector(`[data-session-id="${sessionId}"]`);
+            const backdrop = document.getElementById('backdrop');
+
+            if (item && backdrop) {
+                const session = getSessions().find(s => s.id === sessionId);
+                if (!session) return;
+
+                const floatingHtml = `
+                    <div class="session-item floating" data-session-id="${sessionId}" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2000;width:96%;max-width:900px;max-height:95vh;animation:floatIn 0.4s cubic-bezier(0.34,1.56,0.64,1);">
+                        <div class="glass-card glow-cyan" style="cursor:default;max-height:95vh;overflow-y:auto;">
+                            <div class="close-float" onclick="closeFloat(event,'${sessionId}')" style="position:absolute;top:12px;right:12px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);border-radius:50%;cursor:pointer;">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </div>
+                            ${renderPendingConfirmation(session)}
+
+                            <div class="mb-4 pt-4">
+                                <p class="text-sm text-cyan-300 font-mono mb-1">${session.workDir}</p>
+                                <h3 class="font-medium text-gray-500 text-xs truncate">${session.id}</h3>
+                            </div>
+
+                            <div class="grid grid-cols-5 gap-4 mb-4">
+                                <div class="space-y-1">
+                                    <p class="text-xs text-gray-500">PID</p>
+                                    <p class="font-mono text-sm text-white">${session.pid}</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-xs text-gray-500">状态</p>
+                                    <div class="flex items-center gap-2">
+                                        <div class="status-dot ${getStatusConfig(session.status).dot}"></div>
+                                        <span class="text-sm font-medium ${getStatusConfig(session.status).color}">${getStatusConfig(session.status).text}</span>
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-xs text-gray-500">来源</p>
+                                    <span class="text-sm ${getSourceBadge(session.source).color.split(' ')[0]}">${getSourceBadge(session.source).icon} ${getSourceBadge(session.source).text}</span>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-xs text-gray-500">模型</p>
+                                    <p class="text-sm text-purple-300">${session.model}</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <p class="text-xs text-gray-500">运行时长</p>
+                                    <p class="font-mono text-sm text-cyan-300" data-duration="${session.startTime}">${formatDuration(session.startTime)}</p>
+                                </div>
+                            </div>
+
+                            ${renderContextBreakdown(session)}
+
+                            <div class="flex gap-4 p-3 rounded-lg bg-white/5 mb-4">
+                                <div class="flex-1 text-center">
+                                    <p class="text-xs text-gray-500 mb-1">累计 Input</p>
+                                    <p class="font-mono text-sm text-emerald-400">${formatNumber(session.tokensInput)}</p>
+                                </div>
+                                <div class="flex-1 text-center">
+                                    <p class="text-xs text-gray-500 mb-1">累计 Output</p>
+                                    <p class="font-mono text-sm text-blue-400">${formatNumber(session.tokensOutput)}</p>
+                                </div>
+                                <div class="flex-1 text-center">
+                                    <p class="text-xs text-gray-500 mb-1">累计总计</p>
+                                    <p class="font-mono text-sm text-cyan-400">${formatNumber(session.tokensInput + session.tokensOutput)}</p>
+                                </div>
+                            </div>
+
+                            <div class="border-t border-white/10 pt-4">
+                                <p class="text-xs text-gray-500 mb-3">最近交互 (${session.recentMessages.length})</p>
+                                <div class="space-y-2 h-56 overflow-y-auto pr-1">
+                                    ${session.recentMessages.slice(-10).map(msg => `
+                                        <div class="terminal-text p-2 rounded ${getMsgClass(msg.type)}">
+                                            <div class="flex justify-between items-start gap-2">
+                                                <span class="${msg.type === 'user' || msg.type === 'confirm' ? 'prompt' : 'text-purple-400'}">
+                                                    ${msg.type === 'user' || msg.type === 'confirm' ? '>' : '◆'}
+                                                </span>
+                                                <span class="command flex-1 text-xs">${msg.content}</span>
+                                                <span class="text-xs text-gray-600 whitespace-nowrap">${msg.time}</span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Hide original card
+                item.style.visibility = 'hidden';
+
+                // Insert floating card directly after body or in body
+                document.body.insertAdjacentHTML('beforeend', floatingHtml);
+
+                // Dim other items
+                document.querySelectorAll('.session-item').forEach(other => {
+                    if (other.dataset.sessionId !== sessionId) {
+                        other.classList.add('dimmed');
+                    }
+                });
+
+                // Show backdrop
+                backdrop.classList.add('active');
+            }
+        }
+
+        // Close floating card
+        function closeFloat(event, sessionId) {
+            event.stopPropagation();
+            const floatingCard = document.querySelector(`.session-item.floating[data-session-id="${sessionId}"]`);
+
+            if (floatingCard) {
+                floatingCard.remove();
+            }
+
+            // 加 :not(.floating) 避免误选刚插入 body 的浮动卡片本身
+            const originalCard = document.querySelector(`.session-item:not(.floating)[data-session-id="${sessionId}"]`);
+            if (originalCard) {
+                originalCard.style.visibility = 'visible';
+            }
+
+            // Restore other items
+            document.querySelectorAll('.session-item').forEach(other => {
+                other.classList.remove('dimmed');
+            });
+
+            // Hide backdrop
+            const backdrop = document.getElementById('backdrop');
+            if (backdrop) {
+                backdrop.classList.remove('active');
+            }
+        }
+
+        // Restore session to original state
+        function restoreSession(sessionId) {
+            closeFloat({ stopPropagation: () => {} }, sessionId);
+        }
+
+        // Render stats overview
+        function renderStats(sessions) {
+            const stats = {
+                total: sessions.length,
+                running: sessions.filter(s => s.status === 'running').length,
+                waiting: sessions.filter(s => s.status === 'waiting').length,
+                totalTokens: sessions.reduce((acc, s) => acc + s.tokensInput + s.tokensOutput, 0)
+            };
+
+            return `
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="glass-card glow-cyan p-4">
+                        <p class="text-xs text-gray-500 mb-1">活跃 Sessions</p>
+                        <p class="text-2xl font-bold text-white" id="stat-total">${stats.total}</p>
+                    </div>
+                    <div class="glass-card glow-cyan p-4">
+                        <p class="text-xs text-gray-500 mb-1">执行中</p>
+                        <p class="text-2xl font-bold text-emerald-400" id="stat-running">${stats.running}</p>
+                    </div>
+                    <div class="glass-card glow-cyan p-4">
+                        <p class="text-xs text-gray-500 mb-1">等待确认</p>
+                        <p class="text-2xl font-bold text-amber-400" id="stat-waiting">${stats.waiting}</p>
+                    </div>
+                    <div class="glass-card glow-cyan p-4">
+                        <p class="text-xs text-gray-500 mb-1">总 Token 消耗</p>
+                        <p class="text-2xl font-bold text-cyan-400 font-mono" id="stat-tokens">${formatNumber(stats.totalTokens)}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Main render
+        function render() {
+            const sessions = getSessions();
+            const sessionsHtml = sessions.map(s => renderSessionCard(s)).join('');
+            const statsHtml = renderStats(sessions);
+
+            document.getElementById('app').innerHTML = `
+                <div class="relative z-10 min-h-screen p-6">
+                    <header class="mb-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                                <h1 class="text-2xl md:text-3xl font-bold header-accent mb-1">Claude Code CLI</h1>
+                                <p class="text-gray-500 text-sm">实时监控 Dashboard</p>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="glass-card px-4 py-2">
+                                    <span class="text-xs text-gray-500 mr-2">系统时间</span>
+                                    <span class="font-mono text-cyan-400" id="current-time">${new Date().toLocaleTimeString('zh-CN')}</span>
+                                </div>
+                                <div class="flex items-center gap-2 glass-card px-4 py-2">
+                                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    <span class="text-xs text-emerald-400">实时监控中</span>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    ${statsHtml}
+
+                    <div class="mb-4">
+                        <h2 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                            活跃 Sessions
+                            <span class="text-xs text-gray-500 ml-2">(点击展开/折叠)</span>
+                        </h2>
+                        <div id="sessions-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3">
+                            ${sessionsHtml}
+                        </div>
+                    </div>
+
+                    <footer class="mt-8 py-4 border-t border-white/10 text-center">
+                        <p class="text-xs text-gray-600">Claude Code CLI Dashboard • 本地监控面板</p>
+                        <p class="text-xs text-gray-700 mt-1 font-mono">v1.0.0 • ${new Date().toLocaleDateString('zh-CN')}</p>
+                    </footer>
+                </div>
+                <div id="backdrop" class="backdrop" onclick="closeAllFloating()"></div>
+            `;
+        }
+
+        // Close all floating cards
+        function closeAllFloating() {
+            document.querySelectorAll('.session-item.floating').forEach(item => {
+                const sessionId = item.dataset.sessionId;
+                restoreSession(sessionId);
+            });
+        }
+
+        // 增量更新单张卡片的动态字段，不重建 DOM
+        function updateSessionCard(session) {
+            const item = document.querySelector(`.session-item:not(.floating)[data-session-id="${session.id}"]`);
+            if (!item) return;
+
+            const statusConfig = getStatusConfig(session.status);
+            const contextPercentage = session.contextUsed;
+            const contextColor = getContextColor(contextPercentage);
+
+            const dot = item.querySelector('[data-field="status-dot"]');
+            if (dot) dot.className = `status-dot ${statusConfig.dot}`;
+
+            const statusText = item.querySelector('[data-field="status-text"]');
+            if (statusText) {
+                statusText.textContent = statusConfig.text;
+                statusText.className = `text-[10px] font-medium ${statusConfig.color}`;
+            }
+
+            const tokenEl = item.querySelector('[data-field="token-total"]');
+            if (tokenEl) tokenEl.textContent = `${formatNumber(session.tokensInput + session.tokensOutput)}t`;
+
+            const fill = item.querySelector('[data-field="context-fill"]');
+            if (fill) {
+                fill.style.width = contextPercentage + '%';
+                fill.className = `progress-fill ${contextColor}`;
+            }
+
+            const pctEl = item.querySelector('[data-field="context-pct"]');
+            if (pctEl) pctEl.textContent = contextPercentage + '%';
+        }
+
+        // 增量更新顶部统计卡片
+        function updateStats(sessions) {
+            const running = sessions.filter(s => s.status === 'running').length;
+            const waiting = sessions.filter(s => s.status === 'waiting').length;
+            const totalTokens = sessions.reduce((acc, s) => acc + s.tokensInput + s.tokensOutput, 0);
+
+            const el = id => document.getElementById(id);
+            if (el('stat-total'))   el('stat-total').textContent   = sessions.length;
+            if (el('stat-running')) el('stat-running').textContent = running;
+            if (el('stat-waiting')) el('stat-waiting').textContent = waiting;
+            if (el('stat-tokens'))  el('stat-tokens').textContent  = formatNumber(totalTokens);
+        }
+
+        // 增量同步 session 列表：只增删变化的卡片，其余原地更新
+        function updateSessions(newSessions) {
+            const container = document.getElementById('sessions-container');
+            if (!container) return;
+
+            const existingIds = new Set(
+                [...document.querySelectorAll('.session-item:not(.floating)[data-session-id]')]
+                    .map(el => el.dataset.sessionId)
+            );
+            const newIds = new Set(newSessions.map(s => s.id));
+
+            // 删除已消失的 session
+            existingIds.forEach(id => {
+                if (!newIds.has(id)) {
+                    const el = container.querySelector(`[data-session-id="${id}"]`);
+                    if (el) el.remove();
+                }
+            });
+
+            // 新增或原地更新
+            newSessions.forEach(session => {
+                if (!existingIds.has(session.id)) {
+                    container.insertAdjacentHTML('beforeend', renderSessionCard(session));
+                } else {
+                    updateSessionCard(session);
+                }
+            });
+
+            updateStats(newSessions);
+        }
+
+        // 每 3 秒增量更新，不触发全量 DOM 重建
+        async function updateDynamicData() {
+            const timeEl = document.getElementById('current-time');
+            if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('zh-CN');
+
+            document.querySelectorAll('[data-duration]').forEach(el => {
+                el.textContent = formatDuration(parseInt(el.dataset.duration));
+            });
+
+            if (!useMock) {
+                await fetchRealData();
+                updateSessions(sessionsData.sessions);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            initParticles();
+            await fetchRealData();
+            render();
+            setInterval(updateDynamicData, 3000);
+        });
+    </script>
+</body>
+</html>

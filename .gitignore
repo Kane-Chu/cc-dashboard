@@ -1,0 +1,34 @@
+.*
+.git
+!.git*
+
+# Product
+target
+*.class
+*.[jw]ar
+*.[oa]
+*.so
+*.dylib
+*.luac
+*.pyc
+*.log
+
+# Development
+*.iml
+rebel.xml
+tags
+package-lock.json
+yarn.lock
+
+# VCS
+CVS
+
+# macOS
+Icon
+
+# Directory
+/build
+/dist
+/node_modules
+/out
+/output
