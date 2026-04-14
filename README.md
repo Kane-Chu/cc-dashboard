@@ -4,14 +4,15 @@
 
 ## 功能特性
 
-- **Session 监控**: 展示所有打开的 Claude Code sessions
-- **实时状态**: 显示每个 session 的当前状态（执行中/等待确认/空闲）
+- **Session 监控**: 自动读取 `~/.claude/sessions`，展示所有活跃会话
+- **实时状态**: 显示每个 session 的当前状态（执行中 / 等待确认 / 空闲）
 - **执行时长**: 实时更新的运行时间计时器
-- **Context 占用**: 可视化进度条展示 context 使用情况
-- **Token 统计**: 显示 Input/Output/总计 Token 消耗
-- **工作目录**: 显示每个 session 的工作路径
+- **Context 占用**: 可视化进度条展示当前上下文窗口使用情况，细分为消息估算、系统/工具估算、空闲空间
+- **Token 统计**: 显示累计 Input / Output / 总计 Token 消耗
+- **工作目录**: 显示每个 session 的工作路径，按目录名稳定排序
 - **模型信息**: 显示使用的 Claude 模型版本
-- **最近交互**: 展示最近 5 条交互消息，等待确认的消息会高亮显示
+- **最近交互**: 展示最近 10 条交互消息，等待确认的消息会高亮显示
+- **远程确认**: 当 session 处于"等待确认"状态时，可在 Dashboard 中直接发送确认/拒绝指令（支持 Terminal.app / iTerm2）
 
 ## 设计风格
 
@@ -19,69 +20,78 @@
 - 霓虹蓝/紫色渐变配色
 - 毛玻璃效果卡片
 - 动态粒子背景
-- 扫描线效果
 - 状态指示灯动画
-- 实时数据更新
+- 增量 DOM 更新，无闪屏
 
-## 使用方法
-
-### 方式一：直接打开
-```bash
-open index.html
-```
-
-### 方式二：使用本地服务器
-```bash
-# Python 3
-python -m http.server 8080
-
-# Node.js
-npx serve .
-
-# 然后访问 http://localhost:8080
-```
-
-## 数据集成（可选）
-
-目前页面使用模拟数据展示。要接入真实数据，可以：
-
-1. 创建一个数据收集脚本，读取 Claude Code CLI 的进程信息
-2. 通过 WebSocket 或轮询 API 将数据发送到前端
-3. 修改 `generateMockSessions()` 函数为真实数据获取
-
-### 数据收集思路
+## 快速开始
 
 ```bash
-# 查找 Claude Code 进程
-ps aux | grep claude
+# 启动 Node.js 服务器
+node server.js
 
-# 获取进程详细信息（内存、CPU 等）
-ps -p <PID> -o pid,etime,command
-
-# 获取工作目录
-lsof -p <PID> | grep cwd
+# 访问 Dashboard
+open http://localhost:7777
 ```
+
+## API 接口
+
+### GET `/api/sessions`
+
+返回所有活跃 session 的实时数据，包含：
+
+- `id`, `pid`, `status`
+- `workDir`, `model`
+- `contextUsed`, `contextBreakdown`
+- `tokensInput`, `tokensOutput`
+- `recentMessages`
+- `pendingTools`
+
+### POST `/api/sessions/:id/action`
+
+对指定 session 发送确认/拒绝操作：
+
+```bash
+curl -X POST http://localhost:7777/api/sessions/:id/action \
+  -H "Content-Type: application/json" \
+  -d '{"action":"confirm"}'
+```
+
+`action` 可选值：`confirm` | `reject`
+
+> 远程确认功能通过 AppleScript 向 Terminal.app 或 iTerm2 发送按键实现。VS Code 集成终端、Warp 等第三方终端暂不支持。
+
+## 数据集成
+
+Dashboard 自动从以下位置读取真实数据：
+
+1. `~/.claude/sessions/*.json` — 获取 session 基础信息（PID、工作目录、模型等）
+2. `~/.claude/projects/*/<session-id>.jsonl` — 解析 transcript 获取：
+   - 最后一条 assistant 消息的 `usage`（context 占用、token 统计）
+   - 最近 10 条 user/assistant 交互消息
+   - `stop_reason === 'tool_use'` 时提取待确认的工具调用信息
+
+无需额外配置，只要本地有活跃的 Claude Code CLI 会话，Dashboard 即可自动展示。
 
 ## 技术栈
 
-- React 18
-- Tailwind CSS
-- 原生 JavaScript (Babel 转译)
-- Lucide Icons
+- HTML5 + Tailwind CSS（CDN）
+- 原生 JavaScript（单文件应用，无构建步骤）
+- Node.js（数据收集与静态文件服务）
 
 ## 文件结构
 
 ```
 cc-dashboard/
-├── index.html      # 主页面（包含所有代码）
-├── README.md       # 说明文档
-└── data-bridge/    # 数据桥接脚本（可选扩展）
-    └── collector.sh
+├── index.html      # 主页面（前端所有代码）
+├── server.js       # Node.js 服务器（API + 静态文件）
+└── README.md       # 说明文档
 ```
 
-## 预览
+## 浏览器兼容性
 
-页面包含：
-- 顶部统计概览卡片
-- Session 详细信息卡片网格
-- 每个 session 显示：ID、PID、状态、时长、工作目录、模型、Context 使用、Token 统计、最近交互
+- Chrome / Edge / Safari / Firefox 最新版
+- 推荐使用 WebKit 内核浏览器以获得最佳的 `backdrop-filter` 效果
+
+## License
+
+MIT
