@@ -465,6 +465,10 @@ const MIME_TYPES = {
 const server = http.createServer((req, res) => {
     const jsonHeaders = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
 
+    function sendSSE(res, event, data) {
+        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    }
+
     if (req.url === '/api/sessions') {
         res.writeHead(200, jsonHeaders);
         res.end(JSON.stringify(collectData()));
@@ -478,10 +482,15 @@ const server = http.createServer((req, res) => {
         req.on('data', chunk => { body += chunk; });
         req.on('end', () => {
             try {
-                const { action } = JSON.parse(body || '{}');
-                if (action !== 'confirm' && action !== 'reject') {
+                const { action, text } = JSON.parse(body || '{}');
+                if (action !== 'confirm' && action !== 'reject' && action !== 'sendMessage') {
                     res.writeHead(400, jsonHeaders);
-                    res.end(JSON.stringify({ success: false, error: 'action must be confirm or reject' }));
+                    res.end(JSON.stringify({ success: false, error: 'action must be confirm, reject or sendMessage' }));
+                    return;
+                }
+                if (action === 'sendMessage' && (!text || !text.trim())) {
+                    res.writeHead(400, jsonHeaders);
+                    res.end(JSON.stringify({ success: false, error: 'text is required for sendMessage' }));
                     return;
                 }
 
@@ -503,7 +512,19 @@ const server = http.createServer((req, res) => {
                     return;
                 }
 
-                const result = sendToTTY(session.pid, action);
+                let result;
+                if (action === 'sendMessage') {
+                    const { spawnSync } = require('child_process');
+                    const psResult = spawnSync('ps', ['-o', 'tty=', '-p', String(session.pid)], { encoding: 'utf8' });
+                    const ttyName = psResult.stdout.trim();
+                    if (!ttyName || ttyName === '??') {
+                        result = { success: false, error: '该进程没有控制终端（可能是后台进程或 VS Code 集成终端）' };
+                    } else {
+                        result = sendKeystrokeToTerminal(ttyName, text.trim() + '\r');
+                    }
+                } else {
+                    result = sendToTTY(session.pid, action);
+                }
                 res.writeHead(result.success ? 200 : 500, jsonHeaders);
                 res.end(JSON.stringify(result));
             } catch (e) {
