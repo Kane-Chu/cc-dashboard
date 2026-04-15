@@ -672,7 +672,8 @@
         function escHtml(str) {
             return String(str ?? '')
                 .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         // 工具图标
@@ -795,16 +796,33 @@
             if (chatStreams[sessionId]) return;
             const es = new EventSource(`/api/sessions/${sessionId}/stream`);
             chatStreams[sessionId] = es;
+            let retryCount = 0;
 
             es.addEventListener('message', (e) => {
+                retryCount = 0;
                 try {
                     const msg = JSON.parse(e.data);
                     appendChatMessage(sessionId, msg);
                 } catch (err) {}
             });
 
+            es.addEventListener('reset', () => {
+                const container = document.getElementById(`chat-msgs-${sessionId}`);
+                if (container) container.innerHTML = '';
+            });
+
+            es.addEventListener('close', () => {
+                es.close();
+                delete chatStreams[sessionId];
+            });
+
             es.addEventListener('error', () => {
-                // 断线重连由浏览器自动处理；若面板已关闭，由 stopChatStream 清理
+                retryCount++;
+                if (retryCount > 5) {
+                    es.close();
+                    delete chatStreams[sessionId];
+                    appendChatMessage(sessionId, { type: 'assistant', content: '[连接已断开，请稍后重试]', time: '刚刚' });
+                }
             });
         }
 
@@ -816,12 +834,18 @@
             }
         }
 
+        function msgKey(msg) {
+            return `${msg.type || 'unknown'}|${(msg.content || '').substring(0, 100)}|${msg.time || ''}`;
+        }
+
         function appendChatMessage(sessionId, msg) {
             const container = document.getElementById(`chat-msgs-${sessionId}`);
             if (!container) return;
+            const key = msgKey(msg);
+            if (container.querySelector(`[data-msg-key="${CSS.escape(key)}"]`)) return;
             const isUser = msg.type === 'user';
             const html = `
-                <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
+                <div class="flex ${isUser ? 'justify-end' : 'justify-start'}" data-msg-key="${escHtml(key)}">
                     <div class="max-w-[85%] px-2.5 py-1.5 text-xs ${isUser ? 'chat-msg-user text-cyan-100' : 'chat-msg-assistant text-purple-100'}">
                         <div class="whitespace-pre-wrap break-words">${escHtml(msg.content)}</div>
                         <div class="text-[10px] mt-0.5 opacity-60 text-right">${escHtml(msg.time || '刚刚')}</div>
@@ -850,6 +874,7 @@
                             <input
                                 id="chat-input-${session.id}"
                                 type="text"
+                                maxlength="2000"
                                 class="flex-1 bg-black/20 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50"
                                 placeholder="输入消息后按回车发送..."
                                 onkeydown="if(event.key==='Enter')sendChat('${session.id}')"
@@ -920,6 +945,7 @@
                                 <input
                                     id="popup-chat-input-${sessionId}"
                                     type="text"
+                                    maxlength="2000"
                                     class="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50"
                                     placeholder="输入消息后按回车发送..."
                                     onkeydown="if(event.key==='Enter')sendPopupChat('${sessionId}')"
@@ -951,15 +977,34 @@
             if (popupChatStreams[sessionId]) return;
             const es = new EventSource(`/api/sessions/${sessionId}/stream`);
             popupChatStreams[sessionId] = es;
+            let retryCount = 0;
 
             es.addEventListener('message', (e) => {
+                retryCount = 0;
                 try {
                     const msg = JSON.parse(e.data);
                     appendPopupChatMessage(sessionId, msg);
                 } catch (err) {}
             });
 
-            es.addEventListener('error', () => {});
+            es.addEventListener('reset', () => {
+                const container = document.getElementById(`popup-chat-msgs-${sessionId}`);
+                if (container) container.innerHTML = '';
+            });
+
+            es.addEventListener('close', () => {
+                es.close();
+                delete popupChatStreams[sessionId];
+            });
+
+            es.addEventListener('error', () => {
+                retryCount++;
+                if (retryCount > 5) {
+                    es.close();
+                    delete popupChatStreams[sessionId];
+                    appendPopupChatMessage(sessionId, { type: 'assistant', content: '[连接已断开，请稍后重试]', time: '刚刚' });
+                }
+            });
         }
 
         function stopPopupChatStream(sessionId) {
@@ -973,9 +1018,11 @@
         function appendPopupChatMessage(sessionId, msg) {
             const container = document.getElementById(`popup-chat-msgs-${sessionId}`);
             if (!container) return;
+            const key = msgKey(msg);
+            if (container.querySelector(`[data-msg-key="${CSS.escape(key)}"]`)) return;
             const isUser = msg.type === 'user';
             const html = `
-                <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
+                <div class="flex ${isUser ? 'justify-end' : 'justify-start'}" data-msg-key="${escHtml(key)}">
                     <div class="max-w-[85%] px-3 py-2 text-xs ${isUser ? 'chat-msg-user text-cyan-100' : 'chat-msg-assistant text-purple-100'}">
                         <div class="whitespace-pre-wrap break-words">${escHtml(msg.content)}</div>
                         <div class="text-[10px] mt-0.5 opacity-60 text-right">${escHtml(msg.time || '刚刚')}</div>
@@ -1418,6 +1465,25 @@
             await fetchRealData();
             render();
             setInterval(updateDynamicData, 3000);
+        });
+
+        // 页面关闭前清理所有 SSE 连接
+        window.addEventListener('beforeunload', () => {
+            Object.keys(chatStreams).forEach(id => stopChatStream(id));
+            Object.keys(popupChatStreams).forEach(id => stopPopupChatStream(id));
+        });
+
+        // ESC 键关闭弹窗和浮动卡片
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            // 优先关闭聊天弹窗
+            const popups = document.querySelectorAll('.chat-popup');
+            if (popups.length) {
+                popups.forEach(p => closeChatWindow(p.dataset.sessionId));
+                return;
+            }
+            // 再关闭浮动卡片
+            closeAllFloating();
         });
     </script>
 </body>

@@ -8,6 +8,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { execSync, spawnSync } = require('child_process');
 
 const PORT = process.env.PORT || 7777;
 const CLAUDE_DIR = path.join(process.env.HOME || '/Users/kane', '.claude');
@@ -276,7 +277,6 @@ function isRunning(pid) {
  */
 function getSessionSource(pid) {
     try {
-        const { execSync } = require('child_process');
         const output = execSync(`ps -p ${pid} -o args= 2>/dev/null`, { encoding: 'utf8' });
         if (output.includes('.vscode/extensions/anthropic.claude-code')) {
             return 'vscode';
@@ -370,8 +370,7 @@ function collectData() {
  * macOS 13+ 已移除 TIOCSTI，PTY write 无法被目标进程读取，因此必须依赖终端模拟器转发
  */
 function sendKeystrokeToTerminal(ttyName, text) {
-    const { spawnSync } = require('child_process');
-    const esc = s => s.replace(/"/g, '\\"');
+    const esc = s => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
 
     // 1. 尝试 Terminal.app
     const terminalScript = `
@@ -431,7 +430,6 @@ return "not_found"
  * 向目标进程发送确认/拒绝
  */
 function sendToTTY(pid, action) {
-    const { spawnSync } = require('child_process');
     const psResult = spawnSync('ps', ['-o', 'tty=', '-p', String(pid)], { encoding: 'utf8' });
     const ttyName = psResult.stdout.trim();
     if (!ttyName || ttyName === '??') {
@@ -466,6 +464,7 @@ const server = http.createServer((req, res) => {
     const jsonHeaders = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
 
     function sendSSE(res, event, data) {
+        if (res.writableEnded) return;
         res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     }
 
@@ -514,13 +513,18 @@ const server = http.createServer((req, res) => {
 
                 let result;
                 if (action === 'sendMessage') {
-                    const { spawnSync } = require('child_process');
+                    const trimmedText = text.trim();
+                    if (trimmedText.length > 4000) {
+                        res.writeHead(400, jsonHeaders);
+                        res.end(JSON.stringify({ success: false, error: '消息长度超过 4000 字符限制' }));
+                        return;
+                    }
                     const psResult = spawnSync('ps', ['-o', 'tty=', '-p', String(session.pid)], { encoding: 'utf8' });
                     const ttyName = psResult.stdout.trim();
                     if (!ttyName || ttyName === '??') {
                         result = { success: false, error: '该进程没有控制终端（可能是后台进程或 VS Code 集成终端）' };
                     } else {
-                        result = sendKeystrokeToTerminal(ttyName, text.trim() + '\r');
+                        result = sendKeystrokeToTerminal(ttyName, trimmedText + '\r');
                     }
                 } else {
                     result = sendToTTY(session.pid, action);
@@ -551,6 +555,12 @@ const server = http.createServer((req, res) => {
             return;
         }
 
+        if (!isRunning(session.pid)) {
+            res.writeHead(410, jsonHeaders);
+            res.end(JSON.stringify({ success: false, error: 'Session process is not running' }));
+            return;
+        }
+
         const transcriptPath = getTranscriptPath(session);
         let lastLines = readTranscriptTail(transcriptPath, 50);
         let lastLineCount = lastLines.length;
@@ -571,21 +581,25 @@ const server = http.createServer((req, res) => {
             c.includes('<bash-input>')
         );
 
-        for (const line of lastLines) {
-            try {
-                const entry = JSON.parse(line);
-                if (entry.type !== 'user' && entry.type !== 'assistant') continue;
-                if (entry.type === 'user' && skipCmd(entry.message?.content)) continue;
-                const text = extractContent(entry);
-                if (text && text.trim()) {
-                    sendSSE(res, 'message', {
-                        type: entry.type,
-                        content: text.substring(0, 500),
-                        time: formatTime(entry.timestamp)
-                    });
-                }
-            } catch (e) {}
+        function pushMessages(lines) {
+            for (const line of lines) {
+                try {
+                    const entry = JSON.parse(line);
+                    if (entry.type !== 'user' && entry.type !== 'assistant') continue;
+                    if (entry.type === 'user' && skipCmd(entry.message?.content)) continue;
+                    const text = extractContent(entry);
+                    if (text && text.trim()) {
+                        sendSSE(res, 'message', {
+                            type: entry.type,
+                            content: text.substring(0, 500),
+                            time: formatTime(entry.timestamp)
+                        });
+                    }
+                } catch (e) {}
+            }
         }
+
+        pushMessages(lastLines);
 
         // 心跳定时器
         const heartbeat = setInterval(() => {
@@ -594,35 +608,32 @@ const server = http.createServer((req, res) => {
             }
         }, 15000);
 
-        // 文件监听定时器
+        // 进程存活检查 + 文件监听定时器
         const watcher = setInterval(() => {
+            if (!isRunning(session.pid)) {
+                sendSSE(res, 'close', { reason: 'session ended' });
+                clearInterval(watcher);
+                clearInterval(heartbeat);
+                if (!res.writableEnded) res.end();
+                return;
+            }
+
             if (!fs.existsSync(transcriptPath)) return;
             try {
                 const content = fs.readFileSync(transcriptPath, 'utf8');
                 const allLines = content.split('\n').filter(l => l.trim());
                 if (allLines.length < lastLineCount) {
+                    // 文件被截断或清空，发送 reset 事件并重新推送最近历史
+                    sendSSE(res, 'reset', { reason: 'transcript truncated' });
                     lastLines = allLines.slice(-50);
                     lastLineCount = lastLines.length;
+                    pushMessages(lastLines);
                     return;
                 }
                 if (allLines.length > lastLineCount) {
                     const newLines = allLines.slice(lastLineCount);
                     lastLineCount = allLines.length;
-                    for (const line of newLines) {
-                        try {
-                            const entry = JSON.parse(line);
-                            if (entry.type !== 'user' && entry.type !== 'assistant') continue;
-                            if (entry.type === 'user' && skipCmd(entry.message?.content)) continue;
-                            const text = extractContent(entry);
-                            if (text && text.trim()) {
-                                sendSSE(res, 'message', {
-                                    type: entry.type,
-                                    content: text.substring(0, 500),
-                                    time: formatTime(entry.timestamp)
-                                });
-                            }
-                        } catch (e) {}
-                    }
+                    pushMessages(newLines);
                 }
             } catch (e) {}
         }, 1000);
@@ -637,6 +648,13 @@ const server = http.createServer((req, res) => {
 
     let filePath = req.url === '/' ? '/index.html' : req.url;
     filePath = path.join(__dirname, filePath);
+
+    // 防止路径遍历攻击
+    if (!filePath.startsWith(path.join(__dirname, path.sep))) {
+        res.writeHead(403);
+        res.end('Forbidden');
+        return;
+    }
 
     const ext = path.extname(filePath);
     const contentType = MIME_TYPES[ext] || 'text/plain';
