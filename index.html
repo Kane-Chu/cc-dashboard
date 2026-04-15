@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Claude Code CLI Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -359,6 +360,114 @@
             border: 1px solid rgba(184, 41, 247, 0.25);
             border-radius: 8px;
             border-bottom-left-radius: 2px;
+        }
+
+        /* Markdown 内容样式 */
+        .md-content { line-height: 1.6; }
+        .md-content h1, .md-content h2, .md-content h3, .md-content h4 {
+            font-weight: 600;
+            margin: 0.6em 0 0.3em;
+            color: #e0e0e0;
+        }
+        .md-content h1 { font-size: 1.1rem; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .md-content h2 { font-size: 1rem; color: var(--neon-cyan); }
+        .md-content h3 { font-size: 0.9rem; color: var(--neon-purple); }
+        .md-content p { margin: 0.4em 0; }
+        .md-content p:first-child { margin-top: 0; }
+        .md-content p:last-child { margin-bottom: 0; }
+        .md-content ul, .md-content ol { margin: 0.4em 0; padding-left: 1.2em; }
+        .md-content li { margin: 0.15em 0; }
+        .md-content li::marker { color: var(--neon-cyan); }
+        .md-content a { color: var(--neon-cyan); text-decoration: underline; text-underline-offset: 2px; }
+        .md-content a:hover { color: #fff; }
+        .md-content code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0,0,0,0.35);
+            color: #7eeeff;
+            padding: 0.1em 0.35em;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        .md-content pre {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 0.6em 0.8em;
+            margin: 0.4em 0;
+            overflow-x: auto;
+        }
+        .md-content pre code {
+            background: transparent;
+            padding: 0;
+            color: #d0d0d0;
+            font-size: 0.8em;
+        }
+        .md-content blockquote {
+            border-left: 2px solid var(--neon-purple);
+            margin: 0.4em 0;
+            padding: 0.2em 0.8em;
+            color: #b0b0b0;
+            background: rgba(184,41,247,0.05);
+            border-radius: 0 6px 6px 0;
+        }
+        .md-content hr {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,245,255,0.4), transparent);
+            margin: 0.6em 0;
+        }
+        .md-content img {
+            max-width: 100%;
+            max-height: 240px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: zoom-in;
+            transition: all 0.2s ease;
+            display: block;
+            margin: 0.4em 0;
+        }
+        .md-content img:hover {
+            border-color: rgba(0,245,255,0.4);
+            box-shadow: 0 0 12px rgba(0,245,255,0.15);
+        }
+        .md-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.4em 0;
+            font-size: 0.9em;
+        }
+        .md-content th, .md-content td {
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 0.3em 0.5em;
+            text-align: left;
+        }
+        .md-content th {
+            background: rgba(0,245,255,0.08);
+            color: var(--neon-cyan);
+        }
+        .md-content tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+
+        /* 图片预览弹窗 */
+        .img-preview-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(6px);
+            z-index: 4000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease;
+            cursor: zoom-out;
+        }
+        .img-preview-overlay img {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            cursor: default;
         }
     </style>
 </head>
@@ -867,16 +976,50 @@
             }
         }
 
+        // Markdown 渲染（先转义 raw HTML，再用 marked 解析）
+        function renderMarkdown(text) {
+            if (!text) return '';
+            const safe = String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            return marked.parse(safe, { breaks: true, gfm: true, headerIds: false, mangle: false });
+        }
+
+        // 图片预览弹窗
+        function openImagePreview(src) {
+            if (document.getElementById('img-preview-overlay')) return;
+            const overlay = document.createElement('div');
+            overlay.id = 'img-preview-overlay';
+            overlay.className = 'img-preview-overlay';
+            overlay.innerHTML = `<img src="${escHtml(src)}" alt="preview" onclick="event.stopPropagation()" />`;
+            overlay.onclick = closeImagePreview;
+            document.body.appendChild(overlay);
+        }
+        function closeImagePreview() {
+            const overlay = document.getElementById('img-preview-overlay');
+            if (overlay) overlay.remove();
+        }
+        // 全局委托图片点击
+        document.addEventListener('click', (e) => {
+            const img = e.target.closest('.md-content img');
+            if (img) {
+                e.preventDefault();
+                openImagePreview(img.src);
+            }
+        });
+
         function appendPopupChatMessage(sessionId, msg) {
             const container = document.getElementById(`popup-chat-msgs-${sessionId}`);
             if (!container) return;
             const key = msgKey(msg);
             if (container.querySelector(`[data-msg-key="${CSS.escape(key)}"]`)) return;
             const isUser = msg.type === 'user';
+            const bodyHtml = isUser ? escHtml(msg.content).replace(/\n/g, '<br>') : renderMarkdown(msg.content);
             const html = `
                 <div class="flex ${isUser ? 'justify-end' : 'justify-start'}" data-msg-key="${escHtml(key)}">
                     <div class="max-w-[85%] px-3 py-2 text-xs ${isUser ? 'chat-msg-user text-cyan-100' : 'chat-msg-assistant text-purple-100'}">
-                        <div class="whitespace-pre-wrap break-words">${escHtml(msg.content)}</div>
+                        <div class="${isUser ? 'whitespace-pre-wrap break-words' : 'md-content'}" style="overflow-wrap:anywhere;">${bodyHtml}</div>
                         <div class="text-[10px] mt-0.5 opacity-60 text-right">${escHtml(msg.time || '刚刚')}</div>
                     </div>
                 </div>
@@ -1324,13 +1467,18 @@
         // ESC 键关闭弹窗和浮动卡片
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
-            // 优先关闭聊天弹窗
+            // 最优先关闭图片预览
+            if (document.getElementById('img-preview-overlay')) {
+                closeImagePreview();
+                return;
+            }
+            // 再关闭聊天弹窗
             const popups = document.querySelectorAll('.chat-popup');
             if (popups.length) {
                 popups.forEach(p => closeChatWindow(p.dataset.sessionId));
                 return;
             }
-            // 再关闭浮动卡片
+            // 最后关闭浮动卡片
             closeAllFloating();
         });
     </script>
