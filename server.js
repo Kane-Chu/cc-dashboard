@@ -244,12 +244,28 @@ function parseTranscript(transcriptPath) {
     return stats;
 }
 
+function toImageUrl(filePath) {
+    const cachePrefix = path.join(CLAUDE_DIR, 'image-cache');
+    const normalized = filePath.replace(/\//g, path.sep);
+    if (normalized.startsWith(cachePrefix + path.sep)) {
+        return '/image-cache' + filePath.slice(cachePrefix.length);
+    }
+    return filePath;
+}
+
+function convertImageMarkers(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/\[Image:\s*source:\s*([^\]]+)\]/g, (_, p) => `![image](${encodeURI(toImageUrl(p.trim()))})`)
+        .replace(/\[Image source:\s*([^\]]+)\]/g, (_, p) => `![image](${encodeURI(toImageUrl(p.trim()))})`);
+}
+
 function extractContent(entry) {
     if (!entry.message?.content) return null;
     const c = entry.message.content;
-    if (typeof c === 'string') return c;
+    if (typeof c === 'string') return convertImageMarkers(c);
     if (Array.isArray(c)) {
-        return c.filter(x => x.type === 'text').map(x => x.text).join(' ');
+        return c.filter(x => x.type === 'text').map(x => convertImageMarkers(x.text)).join(' ');
     }
     return null;
 }
@@ -642,6 +658,38 @@ const server = http.createServer((req, res) => {
             clearInterval(watcher);
             clearInterval(heartbeat);
             if (!res.writableEnded) res.end();
+        });
+        return;
+    }
+
+    // 本地图片缓存服务
+    const imageMatch = req.url.match(/^\/image-cache\/(.+)$/);
+    if (imageMatch) {
+        const decoded = decodeURIComponent(imageMatch[1]);
+        const cachePrefix = path.resolve(path.join(CLAUDE_DIR, 'image-cache'));
+        const imagePath = path.resolve(path.join(cachePrefix, decoded));
+        if (!imagePath.startsWith(cachePrefix + path.sep) && imagePath !== cachePrefix) {
+            res.writeHead(403);
+            res.end('Forbidden');
+            return;
+        }
+        fs.readFile(imagePath, (err, data) => {
+            if (err) {
+                res.writeHead(404);
+                res.end('Not Found');
+                return;
+            }
+            const ext = path.extname(imagePath).toLowerCase();
+            const contentType = {
+                '.png': 'image/png',
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.gif': 'image/gif',
+                '.webp': 'image/webp',
+                '.svg': 'image/svg+xml'
+            }[ext] || 'application/octet-stream';
+            res.writeHead(200, { 'Content-Type': contentType });
+            res.end(data);
         });
         return;
     }

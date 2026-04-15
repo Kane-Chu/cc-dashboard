@@ -976,18 +976,19 @@
             }
         }
 
-        // Markdown 渲染（先转义 raw HTML，再用 marked 解析）
+        // Markdown 渲染
         function renderMarkdown(text) {
             if (!text) return '';
-            const safe = String(text)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-            return marked.parse(safe, { breaks: true, gfm: true, headerIds: false, mangle: false });
+            try {
+                return marked.parse(String(text), { breaks: true, gfm: true, headerIds: false, mangle: false });
+            } catch (e) {
+                return escHtml(String(text)).replace(/\n/g, '<br>');
+            }
         }
 
         // 图片预览弹窗
         function openImagePreview(src) {
+            if (!src || (!src.startsWith('/image-cache/') && !src.startsWith('http://') && !src.startsWith('https://'))) return;
             if (document.getElementById('img-preview-overlay')) return;
             const overlay = document.createElement('div');
             overlay.id = 'img-preview-overlay';
@@ -1015,11 +1016,11 @@
             const key = msgKey(msg);
             if (container.querySelector(`[data-msg-key="${CSS.escape(key)}"]`)) return;
             const isUser = msg.type === 'user';
-            const bodyHtml = isUser ? escHtml(msg.content).replace(/\n/g, '<br>') : renderMarkdown(msg.content);
+            const bodyHtml = renderMarkdown(msg.content);
             const html = `
                 <div class="flex ${isUser ? 'justify-end' : 'justify-start'}" data-msg-key="${escHtml(key)}">
                     <div class="max-w-[85%] px-3 py-2 text-xs ${isUser ? 'chat-msg-user text-cyan-100' : 'chat-msg-assistant text-purple-100'}">
-                        <div class="${isUser ? 'whitespace-pre-wrap break-words' : 'md-content'}" style="overflow-wrap:anywhere;">${bodyHtml}</div>
+                        <div class="md-content" style="overflow-wrap:anywhere;">${bodyHtml}</div>
                         <div class="text-[10px] mt-0.5 opacity-60 text-right">${escHtml(msg.time || '刚刚')}</div>
                     </div>
                 </div>
