@@ -13,6 +13,8 @@
 - **模型信息**: 显示使用的 Claude 模型版本
 - **最近交互**: 展示最近 10 条交互消息，等待确认的消息会高亮显示
 - **远程确认**: 当 session 处于"等待确认"状态时，可在 Dashboard 中直接发送确认/拒绝指令（支持 Terminal.app / iTerm2）
+- **实时对话**: 点击卡片展开「实时对话」面板，通过 SSE 实时接收 session 中的消息流
+- **远程发送消息**: 在 Dashboard 中直接向 Terminal.app / iTerm2 中的 session 发送文本消息，Claude 即时回复
 
 ## 设计风格
 
@@ -46,19 +48,35 @@ open http://localhost:7777
 - `recentMessages`
 - `pendingTools`
 
-### POST `/api/sessions/:id/action`
+### GET `/api/sessions/:id/stream`
 
-对指定 session 发送确认/拒绝操作：
+SSE 端点，实时推送指定 session 的 transcript 新增消息：
 
 ```bash
+curl -N http://localhost:7777/api/sessions/:id/stream
+```
+
+连接建立后会先推送最近 50 条历史消息，随后每秒检查文件变化并推送新消息。每 15 秒发送一次心跳保持连接。
+
+### POST `/api/sessions/:id/action`
+
+对指定 session 发送操作指令：
+
+```bash
+# 确认/拒绝
 curl -X POST http://localhost:7777/api/sessions/:id/action \
   -H "Content-Type: application/json" \
   -d '{"action":"confirm"}'
+
+# 发送消息
+curl -X POST http://localhost:7777/api/sessions/:id/action \
+  -H "Content-Type: application/json" \
+  -d '{"action":"sendMessage","text":"帮我优化代码"}'
 ```
 
-`action` 可选值：`confirm` | `reject`
+`action` 可选值：`confirm` | `reject` | `sendMessage`
 
-> 远程确认功能通过 AppleScript 向 Terminal.app 或 iTerm2 发送按键实现。VS Code 集成终端、Warp 等第三方终端暂不支持。
+> 远程操作通过 AppleScript 向 Terminal.app 或 iTerm2 发送按键实现。VS Code 集成终端、Warp 等第三方终端暂不支持。
 
 ## 数据集成
 

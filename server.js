@@ -475,49 +475,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // SSE /api/sessions/:id/stream
-    const streamMatch = req.url.match(/^\/api\/sessions\/([^/]+)\/stream$/);
-    if (streamMatch && req.method === 'GET') {
-        const sessionId = streamMatch[1];
-        const allSessions = getSessions();
-        const session = allSessions.find(s =>
-            s.sessionId === sessionId ||
-            s.sessionId?.split('-').slice(0, 2).join('-') === sessionId
-        );
-
-        if (!session) {
-            res.writeHead(404, jsonHeaders);
-            res.end(JSON.stringify({ success: false, error: 'Session not found' }));
-            return;
-        }
-
-        res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': '*'
-        });
-
-        // 先推送历史消息
-        const transcriptPath = getTranscriptPath(session);
-        const stats = parseTranscript(transcriptPath);
-        // 历史消息按时间正序
-        const history = [...stats.recentMessages].reverse();
-        for (const msg of history) {
-            sendSSE(res, 'message', msg);
-        }
-
-        // 保持连接，每 15 秒发一次心跳注释
-        const heartbeat = setInterval(() => {
-            res.write(':heartbeat\n\n');
-        }, 15000);
-
-        req.on('close', () => {
-            clearInterval(heartbeat);
-        });
-        return;
-    }
-
     // POST /api/sessions/:id/action  { action: 'confirm' | 'reject' }
     const actionMatch = req.url.match(/^\/api\/sessions\/([^/]+)\/action$/);
     if (actionMatch && req.method === 'POST') {
