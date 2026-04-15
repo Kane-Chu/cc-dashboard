@@ -741,6 +741,45 @@
 
         const chatStreams = {}; // sessionId -> EventSource
 
+        async function sendChat(sessionId) {
+            const input = document.getElementById(`chat-input-${sessionId}`);
+            if (!input) return;
+            const text = input.value.trim();
+            if (!text) return;
+
+            // 乐观地在本地显示用户消息
+            appendChatMessage(sessionId, { type: 'user', content: text, time: '刚刚' });
+
+            input.value = '';
+            input.disabled = true;
+
+            try {
+                const res = await fetch(`/api/sessions/${sessionId}/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'sendMessage', text })
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    appendChatMessage(sessionId, {
+                        type: 'assistant',
+                        content: `发送失败：${data.error}`,
+                        time: '刚刚'
+                    });
+                }
+                // 发送成功时，等待 SSE 推送 Claude 的真实回复
+            } catch (e) {
+                appendChatMessage(sessionId, {
+                    type: 'assistant',
+                    content: `网络错误：${e.message}`,
+                    time: '刚刚'
+                });
+            } finally {
+                input.disabled = false;
+                input.focus();
+            }
+        }
+
         function startChatStream(sessionId) {
             if (chatStreams[sessionId]) return;
             const es = new EventSource(`/api/sessions/${sessionId}/stream`);
