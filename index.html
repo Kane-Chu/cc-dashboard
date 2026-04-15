@@ -568,7 +568,7 @@
                             <div class="flex items-center gap-2">
                                 <button
                                     class="w-6 h-6 rounded-full flex items-center justify-center bg-white/5 hover:bg-cyan-500/20 border border-white/10 hover:border-cyan-500/40 transition-all"
-                                    onclick="event.stopPropagation(); toggleMiniChat('${session.id}')"
+                                    onclick="event.stopPropagation(); openChatWindow('${session.id}')"
                                     title="实时对话"
                                 >
                                     <svg class="w-3 h-3 text-gray-400 hover:text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -602,7 +602,7 @@
                         </div>
 
                         <!-- Bottom: Context Bar -->
-                        <div class="flex items-center gap-2 mb-1">
+                        <div class="flex items-center gap-2">
                             <div class="flex-1">
                                 <div class="progress-bar h-1">
                                     <div class="progress-fill ${contextColor}" style="width: ${contextPercentage}%" data-field="context-fill"></div>
@@ -610,8 +610,6 @@
                             </div>
                             <span class="text-[10px] text-gray-500 font-mono whitespace-nowrap" data-field="context-pct">${session.contextUsed}%</span>
                         </div>
-
-                        ${renderMiniChat(session)}
                     </div>
                 </div>
             `;
@@ -880,95 +878,121 @@
             }
         }
 
-        // ========== 主页卡片迷你聊天 ==========
-        const miniChatStreams = {}; // sessionId -> EventSource
+        // ========== 独立聊天弹窗 ==========
+        const popupChatStreams = {}; // sessionId -> EventSource
 
-        function renderMiniChat(session) {
+        function openChatWindow(sessionId) {
+            if (document.querySelector(`.chat-popup[data-session-id="${sessionId}"]`)) return;
+
+            const session = getSessions().find(s => s.id === sessionId);
+            if (!session) return;
+
             const disabledHint = session.source === 'terminal' ? '' :
-                `<p class="text-[9px] text-red-400 mt-0.5">该 session 不在 Terminal.app / iTerm2 中，无法远程发送消息</p>`;
-            return `
-                <div id="mini-chat-panel-${session.id}" class="hidden mt-2 pt-2 border-t border-white/10" onclick="event.stopPropagation()">
-                    <div id="mini-chat-msgs-${session.id}" class="h-20 overflow-y-auto space-y-1.5 pr-1 mb-1.5"></div>
-                    <div class="flex gap-1.5">
-                        <input
-                            id="mini-chat-input-${session.id}"
-                            type="text"
-                            class="flex-1 bg-black/20 border border-white/10 rounded px-1.5 py-1 text-[10px] text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50"
-                            placeholder="输入消息后按回车发送..."
-                            onkeydown="if(event.key==='Enter')sendMiniChat('${session.id}')"
-                        />
-                        <button
-                            onclick="sendMiniChat('${session.id}')"
-                            class="px-2 py-1 rounded text-[10px] font-medium bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/30 transition-all"
-                        >发送</button>
+                `<p class="text-[10px] text-red-400 mt-1">该 session 不在 Terminal.app / iTerm2 中，无法远程发送消息</p>`;
+
+            const popupHtml = `
+                <div class="chat-popup" data-session-id="${sessionId}" style="position:fixed;bottom:20px;right:20px;z-index:3000;width:92%;max-width:420px;height:520px;animation:floatIn 0.3s cubic-bezier(0.34,1.56,0.64,1);" onclick="event.stopPropagation()">
+                    <div class="glass-card glow-cyan h-full flex flex-col" style="cursor:default;background:rgba(15,23,42,0.95);backdrop-filter:blur(20px);">
+                        <!-- Header -->
+                        <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <svg class="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                </svg>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-white truncate">${escHtml(session.workDir.split('/').pop())}</p>
+                                    <p class="text-[10px] text-gray-500 truncate">${session.id}</p>
+                                </div>
+                            </div>
+                            <button class="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/10 transition-all ml-2" onclick="closeChatWindow('${sessionId}')">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Messages -->
+                        <div id="popup-chat-msgs-${sessionId}" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+
+                        <!-- Input -->
+                        <div class="p-3 border-t border-white/10">
+                            <div class="flex gap-2">
+                                <input
+                                    id="popup-chat-input-${sessionId}"
+                                    type="text"
+                                    class="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50"
+                                    placeholder="输入消息后按回车发送..."
+                                    onkeydown="if(event.key==='Enter')sendPopupChat('${sessionId}')"
+                                />
+                                <button
+                                    onclick="sendPopupChat('${sessionId}')"
+                                    class="px-4 py-2 rounded-lg text-xs font-medium bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/30 transition-all"
+                                >发送</button>
+                            </div>
+                            ${disabledHint}
+                        </div>
                     </div>
-                    ${disabledHint}
                 </div>
             `;
+
+            document.body.insertAdjacentHTML('beforeend', popupHtml);
+            startPopupChatStream(sessionId);
         }
 
-        function toggleMiniChat(sessionId) {
-            const panel = document.getElementById(`mini-chat-panel-${sessionId}`);
-            if (!panel) return;
-            const isHidden = panel.classList.contains('hidden');
-            if (isHidden) {
-                panel.classList.remove('hidden');
-                startMiniChatStream(sessionId);
-            } else {
-                panel.classList.add('hidden');
-                stopMiniChatStream(sessionId);
+        function closeChatWindow(sessionId) {
+            const popup = document.querySelector(`.chat-popup[data-session-id="${sessionId}"]`);
+            if (popup) {
+                popup.remove();
             }
+            stopPopupChatStream(sessionId);
         }
 
-        function startMiniChatStream(sessionId) {
-            if (miniChatStreams[sessionId]) return;
+        function startPopupChatStream(sessionId) {
+            if (popupChatStreams[sessionId]) return;
             const es = new EventSource(`/api/sessions/${sessionId}/stream`);
-            miniChatStreams[sessionId] = es;
+            popupChatStreams[sessionId] = es;
 
             es.addEventListener('message', (e) => {
                 try {
                     const msg = JSON.parse(e.data);
-                    appendMiniChatMessage(sessionId, msg);
+                    appendPopupChatMessage(sessionId, msg);
                 } catch (err) {}
             });
 
             es.addEventListener('error', () => {});
         }
 
-        function stopMiniChatStream(sessionId) {
-            const es = miniChatStreams[sessionId];
+        function stopPopupChatStream(sessionId) {
+            const es = popupChatStreams[sessionId];
             if (es) {
                 es.close();
-                delete miniChatStreams[sessionId];
+                delete popupChatStreams[sessionId];
             }
         }
 
-        function appendMiniChatMessage(sessionId, msg) {
-            const container = document.getElementById(`mini-chat-msgs-${sessionId}`);
+        function appendPopupChatMessage(sessionId, msg) {
+            const container = document.getElementById(`popup-chat-msgs-${sessionId}`);
             if (!container) return;
             const isUser = msg.type === 'user';
             const html = `
                 <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
-                    <div class="max-w-[90%] px-2 py-1 text-[10px] leading-relaxed ${isUser ? 'chat-msg-user text-cyan-100' : 'chat-msg-assistant text-purple-100'}">
+                    <div class="max-w-[85%] px-3 py-2 text-xs ${isUser ? 'chat-msg-user text-cyan-100' : 'chat-msg-assistant text-purple-100'}">
                         <div class="whitespace-pre-wrap break-words">${escHtml(msg.content)}</div>
-                        <div class="text-[9px] mt-0.5 opacity-60 text-right">${escHtml(msg.time || '刚刚')}</div>
+                        <div class="text-[10px] mt-0.5 opacity-60 text-right">${escHtml(msg.time || '刚刚')}</div>
                     </div>
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
             container.scrollTop = container.scrollHeight;
-
-            const badge = document.getElementById(`mini-chat-badge-${sessionId}`);
-            if (badge) badge.textContent = `${container.children.length} 条消息`;
         }
 
-        async function sendMiniChat(sessionId) {
-            const input = document.getElementById(`mini-chat-input-${sessionId}`);
+        async function sendPopupChat(sessionId) {
+            const input = document.getElementById(`popup-chat-input-${sessionId}`);
             if (!input) return;
             const text = input.value.trim();
             if (!text) return;
 
-            appendMiniChatMessage(sessionId, { type: 'user', content: text, time: '刚刚' });
+            appendPopupChatMessage(sessionId, { type: 'user', content: text, time: '刚刚' });
             input.value = '';
             input.disabled = true;
 
@@ -980,14 +1004,14 @@
                 });
                 const data = await res.json();
                 if (!data.success) {
-                    appendMiniChatMessage(sessionId, {
+                    appendPopupChatMessage(sessionId, {
                         type: 'assistant',
                         content: `发送失败：${data.error}`,
                         time: '刚刚'
                     });
                 }
             } catch (e) {
-                appendMiniChatMessage(sessionId, {
+                appendPopupChatMessage(sessionId, {
                     type: 'assistant',
                     content: `网络错误：${e.message}`,
                     time: '刚刚'
@@ -1357,7 +1381,7 @@
                 if (!newIds.has(id)) {
                     const el = container.querySelector(`[data-session-id="${id}"]`);
                     if (el) el.remove();
-                    stopMiniChatStream(id);
+                    closeChatWindow(id);
                 }
             });
 
