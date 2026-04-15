@@ -591,7 +591,7 @@
                         </div>
 
                         <!-- Bottom: Context Bar -->
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 mb-1">
                             <div class="flex-1">
                                 <div class="progress-bar h-1">
                                     <div class="progress-fill ${contextColor}" style="width: ${contextPercentage}%" data-field="context-fill"></div>
@@ -599,6 +599,8 @@
                             </div>
                             <span class="text-[10px] text-gray-500 font-mono whitespace-nowrap" data-field="context-pct">${session.contextUsed}%</span>
                         </div>
+
+                        ${renderMiniChat(session)}
                     </div>
                 </div>
             `;
@@ -864,6 +866,130 @@
             } else {
                 panel.classList.add('hidden');
                 stopChatStream(sessionId);
+            }
+        }
+
+        // ========== 主页卡片迷你聊天 ==========
+        const miniChatStreams = {}; // sessionId -> EventSource
+
+        function renderMiniChat(session) {
+            const disabledHint = session.source === 'terminal' ? '' :
+                `<p class="text-[9px] text-red-400 mt-0.5">该 session 不在 Terminal.app / iTerm2 中，无法远程发送消息</p>`;
+            return `
+                <div class="mt-2 pt-2 border-t border-white/10">
+                    <div class="flex items-center justify-between cursor-pointer" onclick="toggleMiniChat('${session.id}')">
+                        <span class="text-[10px] font-medium text-gray-400">实时对话</span>
+                        <span class="text-[10px] text-gray-500" id="mini-chat-badge-${session.id}">点击展开</span>
+                    </div>
+                    <div id="mini-chat-panel-${session.id}" class="hidden mt-2">
+                        <div id="mini-chat-msgs-${session.id}" class="h-20 overflow-y-auto space-y-1.5 pr-1 mb-1.5"></div>
+                        <div class="flex gap-1.5">
+                            <input
+                                id="mini-chat-input-${session.id}"
+                                type="text"
+                                class="flex-1 bg-black/20 border border-white/10 rounded px-1.5 py-1 text-[10px] text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50"
+                                placeholder="输入消息后按回车发送..."
+                                onkeydown="if(event.key==='Enter')sendMiniChat('${session.id}')"
+                            />
+                            <button
+                                onclick="sendMiniChat('${session.id}')"
+                                class="px-2 py-1 rounded text-[10px] font-medium bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/30 transition-all"
+                            >发送</button>
+                        </div>
+                        ${disabledHint}
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleMiniChat(sessionId) {
+            const panel = document.getElementById(`mini-chat-panel-${sessionId}`);
+            if (!panel) return;
+            const isHidden = panel.classList.contains('hidden');
+            if (isHidden) {
+                panel.classList.remove('hidden');
+                startMiniChatStream(sessionId);
+            } else {
+                panel.classList.add('hidden');
+                stopMiniChatStream(sessionId);
+            }
+        }
+
+        function startMiniChatStream(sessionId) {
+            if (miniChatStreams[sessionId]) return;
+            const es = new EventSource(`/api/sessions/${sessionId}/stream`);
+            miniChatStreams[sessionId] = es;
+
+            es.addEventListener('message', (e) => {
+                try {
+                    const msg = JSON.parse(e.data);
+                    appendMiniChatMessage(sessionId, msg);
+                } catch (err) {}
+            });
+
+            es.addEventListener('error', () => {});
+        }
+
+        function stopMiniChatStream(sessionId) {
+            const es = miniChatStreams[sessionId];
+            if (es) {
+                es.close();
+                delete miniChatStreams[sessionId];
+            }
+        }
+
+        function appendMiniChatMessage(sessionId, msg) {
+            const container = document.getElementById(`mini-chat-msgs-${sessionId}`);
+            if (!container) return;
+            const isUser = msg.type === 'user';
+            const html = `
+                <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
+                    <div class="max-w-[90%] px-2 py-1 text-[10px] leading-relaxed ${isUser ? 'chat-msg-user text-cyan-100' : 'chat-msg-assistant text-purple-100'}">
+                        <div class="whitespace-pre-wrap break-words">${escHtml(msg.content)}</div>
+                        <div class="text-[9px] mt-0.5 opacity-60 text-right">${escHtml(msg.time || '刚刚')}</div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+            container.scrollTop = container.scrollHeight;
+
+            const badge = document.getElementById(`mini-chat-badge-${sessionId}`);
+            if (badge) badge.textContent = `${container.children.length} 条消息`;
+        }
+
+        async function sendMiniChat(sessionId) {
+            const input = document.getElementById(`mini-chat-input-${sessionId}`);
+            if (!input) return;
+            const text = input.value.trim();
+            if (!text) return;
+
+            appendMiniChatMessage(sessionId, { type: 'user', content: text, time: '刚刚' });
+            input.value = '';
+            input.disabled = true;
+
+            try {
+                const res = await fetch(`/api/sessions/${sessionId}/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'sendMessage', text })
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    appendMiniChatMessage(sessionId, {
+                        type: 'assistant',
+                        content: `发送失败：${data.error}`,
+                        time: '刚刚'
+                    });
+                }
+            } catch (e) {
+                appendMiniChatMessage(sessionId, {
+                    type: 'assistant',
+                    content: `网络错误：${e.message}`,
+                    time: '刚刚'
+                });
+            } finally {
+                input.disabled = false;
+                input.focus();
             }
         }
 
@@ -1226,6 +1352,7 @@
                 if (!newIds.has(id)) {
                     const el = container.querySelector(`[data-session-id="${id}"]`);
                     if (el) el.remove();
+                    stopMiniChatStream(id);
                 }
             });
 
