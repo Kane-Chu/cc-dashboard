@@ -348,6 +348,18 @@
             background: rgba(245, 158, 11, 0.1);
             border: 1px solid rgba(245, 158, 11, 0.3);
         }
+        .chat-msg-user {
+            background: rgba(0, 245, 255, 0.08);
+            border: 1px solid rgba(0, 245, 255, 0.25);
+            border-radius: 8px;
+            border-bottom-right-radius: 2px;
+        }
+        .chat-msg-assistant {
+            background: rgba(184, 41, 247, 0.08);
+            border: 1px solid rgba(184, 41, 247, 0.25);
+            border-radius: 8px;
+            border-bottom-left-radius: 2px;
+        }
     </style>
 </head>
 <body>
@@ -727,6 +739,49 @@
                 </div>`;
         }
 
+        function renderChatPanel(session) {
+            const disabledHint = session.source === 'terminal' ? '' :
+                `<p class="text-[10px] text-red-400 mt-1">该 session 不在 Terminal.app 或 iTerm2 中，无法远程发送消息</p>`;
+            return `
+                <div class="mb-4 rounded-xl border border-white/10 bg-white/5 p-3">
+                    <div class="flex items-center justify-between mb-2 cursor-pointer" onclick="toggleChat('${session.id}')">
+                        <span class="text-xs font-semibold text-gray-300">实时对话</span>
+                        <span class="text-[10px] text-gray-500" id="chat-badge-${session.id}">点击展开</span>
+                    </div>
+                    <div id="chat-panel-${session.id}" class="hidden">
+                        <div id="chat-msgs-${session.id}" class="h-48 overflow-y-auto space-y-2 pr-1 mb-2"></div>
+                        <div class="flex gap-2">
+                            <input
+                                id="chat-input-${session.id}"
+                                type="text"
+                                class="flex-1 bg-black/20 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50"
+                                placeholder="输入消息后按回车发送..."
+                                onkeydown="if(event.key==='Enter')sendChat('${session.id}')"
+                            />
+                            <button
+                                onclick="sendChat('${session.id}')"
+                                class="px-3 py-1.5 rounded text-xs font-medium bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/30 transition-all"
+                            >发送</button>
+                        </div>
+                        ${disabledHint}
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleChat(sessionId) {
+            const panel = document.getElementById(`chat-panel-${sessionId}`);
+            if (!panel) return;
+            const isHidden = panel.classList.contains('hidden');
+            if (isHidden) {
+                panel.classList.remove('hidden');
+                startChatStream(sessionId);
+            } else {
+                panel.classList.add('hidden');
+                stopChatStream(sessionId);
+            }
+        }
+
         // Render context breakdown for floating card
         function renderContextBreakdown(session) {
             const bd = session.contextBreakdown;
@@ -814,6 +869,7 @@
                                 </svg>
                             </div>
                             ${renderPendingConfirmation(session)}
+                            ${renderChatPanel(session)}
 
                             <div class="mb-4 pt-4">
                                 <p class="text-sm text-cyan-300 font-mono mb-1">${session.workDir}</p>
