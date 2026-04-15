@@ -57,6 +57,20 @@ function getTranscriptPath(session) {
 }
 
 /**
+ * Read transcript file and return last N lines
+ */
+function readTranscriptTail(transcriptPath, maxLines = 50) {
+    if (!transcriptPath || !fs.existsSync(transcriptPath)) return [];
+    try {
+        const content = fs.readFileSync(transcriptPath, 'utf8');
+        const allLines = content.split('\n').filter(l => l.trim());
+        return allLines.slice(-maxLines);
+    } catch (e) {
+        return [];
+    }
+}
+
+/**
  * Parse transcript for stats
  */
 function parseTranscript(transcriptPath) {
