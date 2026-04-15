@@ -739,6 +739,52 @@
                 </div>`;
         }
 
+        const chatStreams = {}; // sessionId -> EventSource
+
+        function startChatStream(sessionId) {
+            if (chatStreams[sessionId]) return;
+            const es = new EventSource(`/api/sessions/${sessionId}/stream`);
+            chatStreams[sessionId] = es;
+
+            es.addEventListener('message', (e) => {
+                try {
+                    const msg = JSON.parse(e.data);
+                    appendChatMessage(sessionId, msg);
+                } catch (err) {}
+            });
+
+            es.addEventListener('error', () => {
+                // 断线重连由浏览器自动处理；若面板已关闭，由 stopChatStream 清理
+            });
+        }
+
+        function stopChatStream(sessionId) {
+            const es = chatStreams[sessionId];
+            if (es) {
+                es.close();
+                delete chatStreams[sessionId];
+            }
+        }
+
+        function appendChatMessage(sessionId, msg) {
+            const container = document.getElementById(`chat-msgs-${sessionId}`);
+            if (!container) return;
+            const isUser = msg.type === 'user';
+            const html = `
+                <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
+                    <div class="max-w-[85%] px-2.5 py-1.5 text-xs ${isUser ? 'chat-msg-user text-cyan-100' : 'chat-msg-assistant text-purple-100'}">
+                        <div class="whitespace-pre-wrap break-words">${escHtml(msg.content)}</div>
+                        <div class="text-[10px] mt-0.5 opacity-60 text-right">${escHtml(msg.time || '刚刚')}</div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+            container.scrollTop = container.scrollHeight;
+
+            const badge = document.getElementById(`chat-badge-${sessionId}`);
+            if (badge) badge.textContent = `${container.children.length} 条消息`;
+        }
+
         function renderChatPanel(session) {
             const disabledHint = session.source === 'terminal' ? '' :
                 `<p class="text-[10px] text-red-400 mt-1">该 session 不在 Terminal.app 或 iTerm2 中，无法远程发送消息</p>`;
@@ -982,6 +1028,8 @@
             if (backdrop) {
                 backdrop.classList.remove('active');
             }
+
+            stopChatStream(sessionId);
         }
 
         // Restore session to original state
