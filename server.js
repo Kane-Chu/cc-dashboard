@@ -57,6 +57,20 @@ function getTranscriptPath(session) {
 }
 
 /**
+ * Read transcript file and return last N lines
+ */
+function readTranscriptTail(transcriptPath, maxLines = 50) {
+    if (!transcriptPath || !fs.existsSync(transcriptPath)) return [];
+    try {
+        const content = fs.readFileSync(transcriptPath, 'utf8');
+        const allLines = content.split('\n').filter(l => l.trim());
+        return allLines.slice(-maxLines);
+    } catch (e) {
+        return [];
+    }
+}
+
+/**
  * Parse transcript for stats
  */
 function parseTranscript(transcriptPath) {
@@ -461,6 +475,49 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // SSE /api/sessions/:id/stream
+    const streamMatch = req.url.match(/^\/api\/sessions\/([^/]+)\/stream$/);
+    if (streamMatch && req.method === 'GET') {
+        const sessionId = streamMatch[1];
+        const allSessions = getSessions();
+        const session = allSessions.find(s =>
+            s.sessionId === sessionId ||
+            s.sessionId?.split('-').slice(0, 2).join('-') === sessionId
+        );
+
+        if (!session) {
+            res.writeHead(404, jsonHeaders);
+            res.end(JSON.stringify({ success: false, error: 'Session not found' }));
+            return;
+        }
+
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*'
+        });
+
+        // 先推送历史消息
+        const transcriptPath = getTranscriptPath(session);
+        const stats = parseTranscript(transcriptPath);
+        // 历史消息按时间正序
+        const history = [...stats.recentMessages].reverse();
+        for (const msg of history) {
+            sendSSE(res, 'message', msg);
+        }
+
+        // 保持连接，每 15 秒发一次心跳注释
+        const heartbeat = setInterval(() => {
+            res.write(':heartbeat\n\n');
+        }, 15000);
+
+        req.on('close', () => {
+            clearInterval(heartbeat);
+        });
+        return;
+    }
+
     // POST /api/sessions/:id/action  { action: 'confirm' | 'reject' }
     const actionMatch = req.url.match(/^\/api\/sessions\/([^/]+)\/action$/);
     if (actionMatch && req.method === 'POST') {
@@ -468,10 +525,15 @@ const server = http.createServer((req, res) => {
         req.on('data', chunk => { body += chunk; });
         req.on('end', () => {
             try {
-                const { action } = JSON.parse(body || '{}');
-                if (action !== 'confirm' && action !== 'reject') {
+                const { action, text } = JSON.parse(body || '{}');
+                if (action !== 'confirm' && action !== 'reject' && action !== 'sendMessage') {
                     res.writeHead(400, jsonHeaders);
-                    res.end(JSON.stringify({ success: false, error: 'action must be confirm or reject' }));
+                    res.end(JSON.stringify({ success: false, error: 'action must be confirm, reject or sendMessage' }));
+                    return;
+                }
+                if (action === 'sendMessage' && (!text || !text.trim())) {
+                    res.writeHead(400, jsonHeaders);
+                    res.end(JSON.stringify({ success: false, error: 'text is required for sendMessage' }));
                     return;
                 }
 
@@ -493,7 +555,19 @@ const server = http.createServer((req, res) => {
                     return;
                 }
 
-                const result = sendToTTY(session.pid, action);
+                let result;
+                if (action === 'sendMessage') {
+                    const { spawnSync } = require('child_process');
+                    const psResult = spawnSync('ps', ['-o', 'tty=', '-p', String(session.pid)], { encoding: 'utf8' });
+                    const ttyName = psResult.stdout.trim();
+                    if (!ttyName || ttyName === '??') {
+                        result = { success: false, error: '该进程没有控制终端（可能是后台进程或 VS Code 集成终端）' };
+                    } else {
+                        result = sendKeystrokeToTerminal(ttyName, text.trim() + '\r');
+                    }
+                } else {
+                    result = sendToTTY(session.pid, action);
+                }
                 res.writeHead(result.success ? 200 : 500, jsonHeaders);
                 res.end(JSON.stringify(result));
             } catch (e) {
