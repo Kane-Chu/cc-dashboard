@@ -751,156 +751,8 @@
                 </div>`;
         }
 
-        const chatStreams = {}; // sessionId -> EventSource
-
-        async function sendChat(sessionId) {
-            const input = document.getElementById(`chat-input-${sessionId}`);
-            if (!input) return;
-            const text = input.value.trim();
-            if (!text) return;
-
-            // 乐观地在本地显示用户消息
-            appendChatMessage(sessionId, { type: 'user', content: text, time: '刚刚' });
-
-            input.value = '';
-            input.disabled = true;
-
-            try {
-                const res = await fetch(`/api/sessions/${sessionId}/action`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'sendMessage', text })
-                });
-                const data = await res.json();
-                if (!data.success) {
-                    appendChatMessage(sessionId, {
-                        type: 'assistant',
-                        content: `发送失败：${data.error}`,
-                        time: '刚刚'
-                    });
-                }
-                // 发送成功时，等待 SSE 推送 Claude 的真实回复
-            } catch (e) {
-                appendChatMessage(sessionId, {
-                    type: 'assistant',
-                    content: `网络错误：${e.message}`,
-                    time: '刚刚'
-                });
-            } finally {
-                input.disabled = false;
-                input.focus();
-            }
-        }
-
-        function startChatStream(sessionId) {
-            if (chatStreams[sessionId]) return;
-            const es = new EventSource(`/api/sessions/${sessionId}/stream`);
-            chatStreams[sessionId] = es;
-            let retryCount = 0;
-
-            es.addEventListener('message', (e) => {
-                retryCount = 0;
-                try {
-                    const msg = JSON.parse(e.data);
-                    appendChatMessage(sessionId, msg);
-                } catch (err) {}
-            });
-
-            es.addEventListener('reset', () => {
-                const container = document.getElementById(`chat-msgs-${sessionId}`);
-                if (container) container.innerHTML = '';
-            });
-
-            es.addEventListener('close', () => {
-                es.close();
-                delete chatStreams[sessionId];
-            });
-
-            es.addEventListener('error', () => {
-                retryCount++;
-                if (retryCount > 5) {
-                    es.close();
-                    delete chatStreams[sessionId];
-                    appendChatMessage(sessionId, { type: 'assistant', content: '[连接已断开，请稍后重试]', time: '刚刚' });
-                }
-            });
-        }
-
-        function stopChatStream(sessionId) {
-            const es = chatStreams[sessionId];
-            if (es) {
-                es.close();
-                delete chatStreams[sessionId];
-            }
-        }
-
         function msgKey(msg) {
             return `${msg.type || 'unknown'}|${(msg.content || '').substring(0, 100)}|${msg.time || ''}`;
-        }
-
-        function appendChatMessage(sessionId, msg) {
-            const container = document.getElementById(`chat-msgs-${sessionId}`);
-            if (!container) return;
-            const key = msgKey(msg);
-            if (container.querySelector(`[data-msg-key="${CSS.escape(key)}"]`)) return;
-            const isUser = msg.type === 'user';
-            const html = `
-                <div class="flex ${isUser ? 'justify-end' : 'justify-start'}" data-msg-key="${escHtml(key)}">
-                    <div class="max-w-[85%] px-2.5 py-1.5 text-xs ${isUser ? 'chat-msg-user text-cyan-100' : 'chat-msg-assistant text-purple-100'}">
-                        <div class="whitespace-pre-wrap break-words">${escHtml(msg.content)}</div>
-                        <div class="text-[10px] mt-0.5 opacity-60 text-right">${escHtml(msg.time || '刚刚')}</div>
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', html);
-            container.scrollTop = container.scrollHeight;
-
-            const badge = document.getElementById(`chat-badge-${sessionId}`);
-            if (badge) badge.textContent = `${container.children.length} 条消息`;
-        }
-
-        function renderChatPanel(session) {
-            const disabledHint = session.source === 'terminal' ? '' :
-                `<p class="text-[10px] text-red-400 mt-1">该 session 不在 Terminal.app 或 iTerm2 中，无法远程发送消息</p>`;
-            return `
-                <div class="mb-4 rounded-xl border border-white/10 bg-white/5 p-3">
-                    <div class="flex items-center justify-between mb-2 cursor-pointer pr-10" onclick="toggleChat('${session.id}')">
-                        <span class="text-xs font-semibold text-gray-300">实时对话</span>
-                        <span class="text-[10px] text-gray-500" id="chat-badge-${session.id}">点击展开</span>
-                    </div>
-                    <div id="chat-panel-${session.id}" class="hidden">
-                        <div id="chat-msgs-${session.id}" class="h-48 overflow-y-auto space-y-2 pr-1 mb-2"></div>
-                        <div class="flex gap-2">
-                            <input
-                                id="chat-input-${session.id}"
-                                type="text"
-                                maxlength="2000"
-                                class="flex-1 bg-black/20 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50"
-                                placeholder="输入消息后按回车发送..."
-                                onkeydown="if(event.key==='Enter')sendChat('${session.id}')"
-                            />
-                            <button
-                                onclick="sendChat('${session.id}')"
-                                class="px-3 py-1.5 rounded text-xs font-medium bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/30 transition-all"
-                            >发送</button>
-                        </div>
-                        ${disabledHint}
-                    </div>
-                </div>
-            `;
-        }
-
-        function toggleChat(sessionId) {
-            const panel = document.getElementById(`chat-panel-${sessionId}`);
-            if (!panel) return;
-            const isHidden = panel.classList.contains('hidden');
-            if (isHidden) {
-                panel.classList.remove('hidden');
-                startChatStream(sessionId);
-            } else {
-                panel.classList.add('hidden');
-                stopChatStream(sessionId);
-            }
         }
 
         // ========== 独立聊天弹窗 ==========
@@ -1156,7 +1008,6 @@
                                 </svg>
                             </div>
                             ${renderPendingConfirmation(session)}
-                            ${renderChatPanel(session)}
 
                             <div class="mb-4 pt-4">
                                 <p class="text-sm text-cyan-300 font-mono mb-1">${session.workDir}</p>
@@ -1269,8 +1120,6 @@
             if (backdrop) {
                 backdrop.classList.remove('active');
             }
-
-            stopChatStream(sessionId);
         }
 
         // Restore session to original state
@@ -1469,7 +1318,6 @@
 
         // 页面关闭前清理所有 SSE 连接
         window.addEventListener('beforeunload', () => {
-            Object.keys(chatStreams).forEach(id => stopChatStream(id));
             Object.keys(popupChatStreams).forEach(id => stopPopupChatStream(id));
         });
 
