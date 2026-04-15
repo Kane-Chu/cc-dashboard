@@ -451,6 +451,10 @@ const MIME_TYPES = {
 const server = http.createServer((req, res) => {
     const jsonHeaders = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
 
+    function sendSSE(res, event, data) {
+        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    }
+
     if (req.url === '/api/sessions') {
         res.writeHead(200, jsonHeaders);
         res.end(JSON.stringify(collectData()));
@@ -496,6 +500,106 @@ const server = http.createServer((req, res) => {
                 res.writeHead(400, jsonHeaders);
                 res.end(JSON.stringify({ success: false, error: e.message }));
             }
+        });
+        return;
+    }
+
+    // GET /api/sessions/:id/stream  SSE 端点
+    const streamMatch = req.url.match(/^\/api\/sessions\/([^/]+)\/stream$/);
+    if (streamMatch && req.method === 'GET') {
+        const sessionId = streamMatch[1];
+        const allSessions = getSessions();
+        const session = allSessions.find(s =>
+            s.sessionId === sessionId ||
+            s.sessionId?.split('-').slice(0, 2).join('-') === sessionId
+        );
+
+        if (!session) {
+            res.writeHead(404, jsonHeaders);
+            res.end(JSON.stringify({ success: false, error: 'Session not found' }));
+            return;
+        }
+
+        const transcriptPath = getTranscriptPath(session);
+        let lastLines = readTranscriptTail(transcriptPath, 50);
+        let lastLineCount = lastLines.length;
+
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*'
+        });
+
+        // 发送初始历史消息
+        const skipCmd = (c) => typeof c === 'string' && (
+            c.includes('<command-name>') ||
+            c.includes('<local-command-stdout>') ||
+            c.includes('<local-command-caveat>') ||
+            c.includes('<bash-stdout>') ||
+            c.includes('<bash-input>')
+        );
+
+        for (const line of lastLines) {
+            try {
+                const entry = JSON.parse(line);
+                if (entry.type !== 'user' && entry.type !== 'assistant') continue;
+                if (entry.type === 'user' && skipCmd(entry.message?.content)) continue;
+                const text = extractContent(entry);
+                if (text && text.trim()) {
+                    sendSSE(res, 'message', {
+                        type: entry.type,
+                        content: text.substring(0, 500),
+                        time: formatTime(entry.timestamp)
+                    });
+                }
+            } catch (e) {}
+        }
+
+        // 心跳定时器
+        const heartbeat = setInterval(() => {
+            if (!res.writableEnded) {
+                sendSSE(res, 'ping', {});
+            }
+        }, 15000);
+
+        // 文件监听定时器
+        const watcher = setInterval(() => {
+            if (!fs.existsSync(transcriptPath)) return;
+            try {
+                const content = fs.readFileSync(transcriptPath, 'utf8');
+                const allLines = content.split('\n').filter(l => l.trim());
+                if (allLines.length < lastLineCount) {
+                    lastLines = allLines.slice(-50);
+                    lastLineCount = lastLines.length;
+                    return;
+                }
+                if (allLines.length > lastLineCount) {
+                    const newLines = allLines.slice(lastLineCount);
+                    lastLineCount = allLines.length;
+                    for (const line of newLines) {
+                        try {
+                            const entry = JSON.parse(line);
+                            if (entry.type !== 'user' && entry.type !== 'assistant') continue;
+                            if (entry.type === 'user' && skipCmd(entry.message?.content)) continue;
+                            const text = extractContent(entry);
+                            if (text && text.trim()) {
+                                sendSSE(res, 'message', {
+                                    type: entry.type,
+                                    content: text.substring(0, 500),
+                                    time: formatTime(entry.timestamp)
+                                });
+                            }
+                        } catch (e) {}
+                    }
+                }
+            } catch (e) {}
+        }, 1000);
+
+        req.on('close', () => {
+            clearInterval(watcher);
+            clearInterval(heartbeat);
+            if (!res.writableEnded) res.end();
         });
         return;
     }
