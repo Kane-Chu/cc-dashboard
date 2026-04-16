@@ -988,7 +988,7 @@
 
         // 图片预览弹窗
         function openImagePreview(src) {
-            if (!src || (!src.startsWith('/image-cache/') && !src.startsWith('http://') && !src.startsWith('https://'))) return;
+            if (!src || (!src.startsWith('/image-cache/') && !src.startsWith('http://') && !src.startsWith('https://') && !src.startsWith('data:'))) return;
             if (document.getElementById('img-preview-overlay')) return;
             const overlay = document.createElement('div');
             overlay.id = 'img-preview-overlay';

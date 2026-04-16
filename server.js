@@ -265,7 +265,20 @@ function extractContent(entry) {
     const c = entry.message.content;
     if (typeof c === 'string') return convertImageMarkers(c);
     if (Array.isArray(c)) {
-        return c.filter(x => x.type === 'text').map(x => convertImageMarkers(x.text)).join(' ');
+        return c.map(x => {
+            if (x.type === 'text') return convertImageMarkers(x.text);
+            if (x.type === 'image') {
+                if (x.source?.type === 'base64' && x.source?.data && x.source?.media_type) {
+                    const MAX_BASE64_LEN = 1024 * 1024;
+                    if (x.source.data.length > MAX_BASE64_LEN) {
+                        return '[Image: 图片过大，已省略预览]';
+                    }
+                    return `![image](data:${x.source.media_type};base64,${x.source.data})`;
+                }
+                return '';
+            }
+            return '';
+        }).join(' ');
     }
     return null;
 }
