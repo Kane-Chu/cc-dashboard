@@ -1001,14 +1001,14 @@
             const overlay = document.getElementById('img-preview-overlay');
             if (overlay) overlay.remove();
         }
-        // 全局委托图片点击
+        // 全局委托图片点击（使用 capture 阶段，避免被 chat-popup 的 stopPropagation 拦截）
         document.addEventListener('click', (e) => {
             const img = e.target.closest('.md-content img');
             if (img) {
                 e.preventDefault();
                 openImagePreview(img.src);
             }
-        });
+        }, true);
 
         function appendPopupChatMessage(sessionId, msg) {
             const container = document.getElementById(`popup-chat-msgs-${sessionId}`);
