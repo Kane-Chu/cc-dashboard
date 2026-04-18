@@ -12,6 +12,7 @@ const { execSync, spawnSync } = require('child_process');
 
 const PORT = process.env.PORT || 7777;
 const CLAUDE_DIR = path.join(process.env.HOME || '/Users/kane', '.claude');
+const WEB_DIR = path.join(__dirname, 'web');
 const SESSIONS_DIR = path.join(CLAUDE_DIR, 'sessions');
 const PROJECTS_DIR = path.join(CLAUDE_DIR, 'projects');
 
@@ -712,10 +713,10 @@ const server = http.createServer((req, res) => {
     }
 
     let filePath = req.url === '/' ? '/index.html' : req.url;
-    filePath = path.join(__dirname, filePath);
+    filePath = path.join(WEB_DIR, filePath);
 
     // 防止路径遍历攻击
-    if (!filePath.startsWith(path.join(__dirname, path.sep))) {
+    if (!filePath.startsWith(path.join(WEB_DIR, path.sep))) {
         res.writeHead(403);
         res.end('Forbidden');
         return;
