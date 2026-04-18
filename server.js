@@ -346,6 +346,10 @@ function collectData() {
             status = 'waiting';
         } else if (stats.lastMessageType === 'user') {
             // User just sent a message, Claude is processing
+            // TODO: /rewind 回退后 transcript 会被截断，若截断点恰好是 user 消息，
+            // 此时 assistant 并未在运行，但会被误判为 running。修复思路：若最后一条
+            // user 消息后长时间（如 10 分钟以上）无新消息，可降级为 idle。部分任务
+            // 执行耗时较长，阈值需设得宽松一些，或结合 session 元数据中的回退记录判断。
             status = 'running';
         } else if (stats.lastMessageType === 'assistant') {
             // Assistant has responded - check if it's complete
