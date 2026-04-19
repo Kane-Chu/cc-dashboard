@@ -91,7 +91,7 @@ struct SessionCardView: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(Color(.systemGray5))
+                    .background(Color.gray.opacity(0.12))
                     .clipShape(Capsule())
 
                 Text(durationText)
@@ -99,12 +99,12 @@ struct SessionCardView: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(Color(.systemGray5))
+                    .background(Color.gray.opacity(0.12))
                     .clipShape(Capsule())
             }
         }
         .padding(12)
-        .background(Color(.systemGray6))
+        .background(Color.gray.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)

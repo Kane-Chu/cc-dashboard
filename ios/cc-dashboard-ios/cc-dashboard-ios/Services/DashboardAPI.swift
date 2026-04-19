@@ -20,26 +20,16 @@ enum APIError: Error, LocalizedError {
     }
 }
 
-@Observable
-class DashboardAPI {
-    private let settings: SettingsStore
-
-    init(settings: SettingsStore) {
-        self.settings = settings
-    }
-
-    func fetchSessions() async throws -> [Session] {
-        guard let url = URL(string: "\(settings.baseURL)/api/sessions") else {
+struct DashboardAPI {
+    static func fetchSessions(baseURL: String) async throws -> [Session] {
+        guard let url = URL(string: "\(baseURL)/api/sessions") else {
             throw APIError.invalidURL
         }
 
         let (data, response) = try await URLSession.shared.data(from: url)
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
-
-        guard httpResponse.statusCode == 200 else {
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
             throw APIError.invalidResponse
         }
 
@@ -47,8 +37,8 @@ class DashboardAPI {
         return decoded.sessions
     }
 
-    func sendAction(sessionId: String, action: String) async throws -> ActionResponse {
-        guard let url = URL(string: "\(settings.baseURL)/api/sessions/\(sessionId)/action") else {
+    static func sendAction(baseURL: String, sessionId: String, action: String) async throws -> ActionResponse {
+        guard let url = URL(string: "\(baseURL)/api/sessions/\(sessionId)/action") else {
             throw APIError.invalidURL
         }
 
@@ -59,7 +49,8 @@ class DashboardAPI {
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
-        guard let httpResponse = response as? HTTPURLResponse else {
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
             throw APIError.invalidResponse
         }
 
@@ -72,8 +63,8 @@ class DashboardAPI {
         return decoded
     }
 
-    func testConnection() async throws -> Bool {
-        _ = try await fetchSessions()
+    static func testConnection(baseURL: String) async throws -> Bool {
+        _ = try await fetchSessions(baseURL: baseURL)
         return true
     }
 }

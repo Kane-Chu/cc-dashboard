@@ -1,0 +1,26 @@
+name: cc-dashboard-ios
+targets:
+  cc-dashboard-ios:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - cc-dashboard-ios
+    info:
+      path: cc-dashboard-ios/Info.plist
+      properties:
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UILaunchScreen:
+          UIColorName: ""
+          UIImageName: ""
+        UIRequiresFullScreen: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kane.cc-dashboard-ios
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1"

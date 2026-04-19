@@ -1,0 +1,348 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		5089CE13D1903E7BFCBFEB8A /* SessionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C4A3173517C55B675E1E56A /* SessionListView.swift */; };
+		5A1311CC575FB52A1C2295D2 /* SessionCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A5522D7D9F32F24207E2A8 /* SessionCardView.swift */; };
+		5B68539549538D000ED15629 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0FBF12BC5D6A204A6FE780A /* Session.swift */; };
+		8963908EA934DA29C6019213 /* ConfirmSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1DFC046778B7534565A3846 /* ConfirmSheetView.swift */; };
+		AE6E029668CE4D81C0A566D0 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5602DBA74DAA2ED879F1F26 /* SettingsStore.swift */; };
+		B6F9EEFF901885A263AA5007 /* cc_dashboard_iosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB51B1C2957E78AECDB39D1 /* cc_dashboard_iosApp.swift */; };
+		D76BC2882F96C9A2DBE374ED /* DashboardAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD29CD03C6CB786659A634FF /* DashboardAPI.swift */; };
+		F2E7F0CD33588B472B8192C1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D679139B9F08353F5CE1AF2D /* SettingsView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		2C4A3173517C55B675E1E56A /* SessionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionListView.swift; sourceTree = "<group>"; };
+		4B2637D6596A10D87A091391 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		850CC1F93F551B265F489801 /* cc-dashboard-ios.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "cc-dashboard-ios.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BAB51B1C2957E78AECDB39D1 /* cc_dashboard_iosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = cc_dashboard_iosApp.swift; sourceTree = "<group>"; };
+		C1DFC046778B7534565A3846 /* ConfirmSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmSheetView.swift; sourceTree = "<group>"; };
+		D0FBF12BC5D6A204A6FE780A /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
+		D5602DBA74DAA2ED879F1F26 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		D679139B9F08353F5CE1AF2D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		DD29CD03C6CB786659A634FF /* DashboardAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardAPI.swift; sourceTree = "<group>"; };
+		F7A5522D7D9F32F24207E2A8 /* SessionCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionCardView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		5C827B715F70EEB2F1BEDE6D /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				C1DFC046778B7534565A3846 /* ConfirmSheetView.swift */,
+				F7A5522D7D9F32F24207E2A8 /* SessionCardView.swift */,
+				2C4A3173517C55B675E1E56A /* SessionListView.swift */,
+				D679139B9F08353F5CE1AF2D /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		74ADC1FC492C244A4404569F /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				DD29CD03C6CB786659A634FF /* DashboardAPI.swift */,
+				D5602DBA74DAA2ED879F1F26 /* SettingsStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A4705D39E099EEBB2C9E51E4 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				850CC1F93F551B265F489801 /* cc-dashboard-ios.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D78E8B2BB4C589EFD1D3E24B /* App */ = {
+			isa = PBXGroup;
+			children = (
+				BAB51B1C2957E78AECDB39D1 /* cc_dashboard_iosApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		E483EE77F2CCC6421E5E8857 = {
+			isa = PBXGroup;
+			children = (
+				E523E83C116EE8820DD24EC4 /* cc-dashboard-ios */,
+				A4705D39E099EEBB2C9E51E4 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E523E83C116EE8820DD24EC4 /* cc-dashboard-ios */ = {
+			isa = PBXGroup;
+			children = (
+				4B2637D6596A10D87A091391 /* Info.plist */,
+				D78E8B2BB4C589EFD1D3E24B /* App */,
+				EC5D3D74CECAC1C5F697AEDB /* Models */,
+				74ADC1FC492C244A4404569F /* Services */,
+				5C827B715F70EEB2F1BEDE6D /* Views */,
+			);
+			path = "cc-dashboard-ios";
+			sourceTree = "<group>";
+		};
+		EC5D3D74CECAC1C5F697AEDB /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				D0FBF12BC5D6A204A6FE780A /* Session.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C2CC60FB0B41A0B1D45F416B /* cc-dashboard-ios */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5BEA5060C313F79920972B6C /* Build configuration list for PBXNativeTarget "cc-dashboard-ios" */;
+			buildPhases = (
+				F5C0DD7318E0B92709292A54 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "cc-dashboard-ios";
+			packageProductDependencies = (
+			);
+			productName = "cc-dashboard-ios";
+			productReference = 850CC1F93F551B265F489801 /* cc-dashboard-ios.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E9CDEA86FD8C4610FCABAC38 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = A06B07F0711C6C9A9A19C5B5 /* Build configuration list for PBXProject "cc-dashboard-ios" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = E483EE77F2CCC6421E5E8857;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A4705D39E099EEBB2C9E51E4 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C2CC60FB0B41A0B1D45F416B /* cc-dashboard-ios */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F5C0DD7318E0B92709292A54 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8963908EA934DA29C6019213 /* ConfirmSheetView.swift in Sources */,
+				D76BC2882F96C9A2DBE374ED /* DashboardAPI.swift in Sources */,
+				5B68539549538D000ED15629 /* Session.swift in Sources */,
+				5A1311CC575FB52A1C2295D2 /* SessionCardView.swift in Sources */,
+				5089CE13D1903E7BFCBFEB8A /* SessionListView.swift in Sources */,
+				AE6E029668CE4D81C0A566D0 /* SettingsStore.swift in Sources */,
+				F2E7F0CD33588B472B8192C1 /* SettingsView.swift in Sources */,
+				B6F9EEFF901885A263AA5007 /* cc_dashboard_iosApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		370AEA6E6EBF8B2834576643 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				INFOPLIST_FILE = "cc-dashboard-ios/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.kane.cc-dashboard-ios";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		613C993098D624F7B374F434 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BDB91098476D217E985B620E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				INFOPLIST_FILE = "cc-dashboard-ios/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.kane.cc-dashboard-ios";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		DD6E678B4C6CE8B3F6E16D4E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5BEA5060C313F79920972B6C /* Build configuration list for PBXNativeTarget "cc-dashboard-ios" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				370AEA6E6EBF8B2834576643 /* Debug */,
+				BDB91098476D217E985B620E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A06B07F0711C6C9A9A19C5B5 /* Build configuration list for PBXProject "cc-dashboard-ios" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				613C993098D624F7B374F434 /* Debug */,
+				DD6E678B4C6CE8B3F6E16D4E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E9CDEA86FD8C4610FCABAC38 /* Project object */;
+}

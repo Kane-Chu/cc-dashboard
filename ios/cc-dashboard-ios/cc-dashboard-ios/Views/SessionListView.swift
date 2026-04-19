@@ -9,7 +9,6 @@ struct SessionListView: View {
     @State private var showConfirmSheet = false
 
     private let settings = SettingsStore()
-    private var api: DashboardAPI { DashboardAPI(settings: settings) }
 
     private var sortedSessions: [Session] {
         sessions.sorted { a, b in
@@ -83,11 +82,11 @@ struct SessionListView: View {
                     ConfirmSheetView(
                         session: session,
                         onConfirm: {
-                            try await api.sendAction(sessionId: session.id, action: "confirm")
+                            _ = try await DashboardAPI.sendAction(baseURL: settings.baseURL, sessionId: session.id, action: "confirm")
                             await loadSessions()
                         },
                         onReject: {
-                            try await api.sendAction(sessionId: session.id, action: "reject")
+                            _ = try await DashboardAPI.sendAction(baseURL: settings.baseURL, sessionId: session.id, action: "reject")
                             await loadSessions()
                         }
                     )
@@ -112,7 +111,7 @@ struct SessionListView: View {
         defer { isLoading = false }
 
         do {
-            sessions = try await api.fetchSessions()
+            sessions = try await DashboardAPI.fetchSessions(baseURL: settings.baseURL)
             errorMessage = nil
         } catch {
             if sessions.isEmpty {

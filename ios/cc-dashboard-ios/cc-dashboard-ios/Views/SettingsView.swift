@@ -6,7 +6,7 @@ struct SettingsView: View {
 
     @State private var testStatus: TestStatus = .idle
 
-    enum TestStatus {
+    enum TestStatus: Equatable {
         case idle
         case testing
         case success
@@ -114,8 +114,7 @@ struct SettingsView: View {
         }
 
         do {
-            let api = DashboardAPI(settings: settings)
-            _ = try await api.fetchSessions()
+            _ = try await DashboardAPI.testConnection(baseURL: settings.baseURL)
             testStatus = .success
         } catch {
             testStatus = .failed(error.localizedDescription)

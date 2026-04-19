@@ -56,7 +56,7 @@ struct ConfirmSheetView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(Color(.systemGray4))
+                    .fill(Color.gray.opacity(0.4))
                     .frame(width: 36, height: 4)
                     .padding(.top, 8)
                     .padding(.bottom, 16)
@@ -98,13 +98,13 @@ struct ConfirmSheetView: View {
                                     Text(toolInput)
                                         .font(.system(.caption, design: .monospaced))
                                         .padding(10)
-                                        .background(Color(.systemGray5))
+                                        .background(Color.gray.opacity(0.12))
                                         .clipShape(RoundedRectangle(cornerRadius: 8))
                                 }
                             }
                         }
                         .padding(12)
-                        .background(Color(.systemGray6))
+                        .background(Color.gray.opacity(0.08))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
 
                         if let error = errorMessage {
