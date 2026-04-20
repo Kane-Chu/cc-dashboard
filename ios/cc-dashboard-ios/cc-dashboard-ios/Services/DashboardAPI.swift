@@ -21,10 +21,18 @@ enum APIError: Error, LocalizedError {
 }
 
 struct DashboardAPI {
-    static func fetchSessions(baseURL: String, session: URLSession = .shared) async throws -> [Session] {
-        guard let url = URL(string: "\(baseURL)/api/sessions") else {
+    private static func makeURL(baseURL: String, path: String) throws -> URL {
+        guard let url = URL(string: baseURL + path),
+              let scheme = url.scheme,
+              ["http", "https"].contains(scheme),
+              let host = url.host, !host.isEmpty else {
             throw APIError.invalidURL
         }
+        return url
+    }
+
+    static func fetchSessions(baseURL: String, session: URLSession = .shared) async throws -> [Session] {
+        let url = try makeURL(baseURL: baseURL, path: "/api/sessions")
 
         let (data, response) = try await session.data(from: url)
 
@@ -38,9 +46,7 @@ struct DashboardAPI {
     }
 
     static func sendAction(baseURL: String, sessionId: String, action: String, session: URLSession = .shared) async throws -> ActionResponse {
-        guard let url = URL(string: "\(baseURL)/api/sessions/\(sessionId)/action") else {
-            throw APIError.invalidURL
-        }
+        let url = try makeURL(baseURL: baseURL, path: "/api/sessions/\(sessionId)/action")
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -63,8 +69,7 @@ struct DashboardAPI {
         return decoded
     }
 
-    static func testConnection(baseURL: String, session: URLSession = .shared) async throws -> Bool {
+    static func testConnection(baseURL: String, session: URLSession = .shared) async throws {
         _ = try await fetchSessions(baseURL: baseURL, session: session)
-        return true
     }
 }

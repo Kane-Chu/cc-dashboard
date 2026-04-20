@@ -9,6 +9,7 @@ struct SessionListView: View {
     @State private var showConfirmSheet = false
 
     private let settings = SettingsStore()
+    private let isUITesting = ProcessInfo.processInfo.arguments.contains("--uitesting")
 
     private var sortedSessions: [Session] {
         sessions.sorted { a, b in
@@ -72,6 +73,7 @@ struct SessionListView: View {
                     } label: {
                         Image(systemName: "gear")
                     }
+                    .accessibilityIdentifier("settings-button")
                 }
             }
             .sheet(isPresented: $showSettings) {
@@ -93,10 +95,14 @@ struct SessionListView: View {
                 }
             }
             .task {
-                await loadSessions()
+                if !isUITesting {
+                    await loadSessions()
+                }
             }
             .task(id: hasWaitingSession) {
-                await startPolling()
+                if !isUITesting {
+                    await startPolling()
+                }
             }
             .alert("错误", isPresented: .constant(errorMessage != nil)) {
                 Button("确定") { errorMessage = nil }

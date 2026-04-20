@@ -100,6 +100,7 @@ struct SettingsView: View {
                     Button("完成") {
                         dismiss()
                     }
+                    .accessibilityIdentifier("settings-done")
                 }
             }
         }

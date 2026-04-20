@@ -7,6 +7,7 @@ final class SessionListUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        app.launchArguments = ["--uitesting"]
     }
 
     override func tearDownWithError() throws {
@@ -20,21 +21,27 @@ final class SessionListUITests: XCTestCase {
 
     func testSettingsButtonExists() {
         app.launch()
-        let settingsButton = app.buttons["gear"]
+        let settingsButton = app.buttons["settings-button"]
         XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
     }
 
     func testOpenAndCloseSettings() {
         app.launch()
 
-        app.buttons["gear"].tap()
+        let alertOKButton = app.buttons["确定"]
+        if alertOKButton.waitForExistence(timeout: 5) {
+            alertOKButton.tap()
+        }
 
-        XCTAssertTrue(app.staticTexts["设置"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["服务器配置"].waitForExistence(timeout: 5))
+        let settingsButton = app.buttons["settings-button"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
+        settingsButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
-        // 点击左上角返回按钮关闭设置页
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let doneButton = app.buttons["完成"]
+        XCTAssertTrue(doneButton.waitForExistence(timeout: 5))
+        doneButton.tap()
 
         XCTAssertTrue(app.staticTexts["Claude Sessions"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["完成"].waitForExistence(timeout: 2))
     }
 }
