@@ -1,6 +1,7 @@
 .*
 .git
 !.git*
+!.docs/
 
 # Product
 target
@@ -33,3 +34,20 @@ Icon
 /out
 /output
 .superpowers/
+
+# Xcode
+xcuserdata/
+project.xcworkspace/xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM/
+
+# Swift Package Manager
+.build/
+Package.resolved
+
+# CocoaPods
+Pods/
