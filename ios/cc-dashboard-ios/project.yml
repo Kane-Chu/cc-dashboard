@@ -50,3 +50,27 @@ targets:
       base:
         SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  cc-dashboard-ios:
+    build:
+      targets:
+        cc-dashboard-ios: all
+    test:
+      targets:
+        - name: cc-dashboard-iosTests
+        - name: cc-dashboard-iosUITests
+      preActions:
+        - script: |
+            if [ -n "$WORKSPACE_PATH" ]; then
+              SERVER_JS="$(dirname "$(dirname "$WORKSPACE_PATH")")/../../server.js"
+            else
+              SERVER_JS=$(find "$HOME" -maxdepth 5 -name "server.js" -path "*/cc-dashboard/*" 2>/dev/null | head -1)
+            fi
+            if [ -n "$SERVER_JS" ] && [ -f "$SERVER_JS" ] && ! curl -sf http://localhost:7777/api/sessions >/dev/null 2>&1; then
+              node "$SERVER_JS" &
+              sleep 3
+            fi
+          name: Start Local Server
+          settings:
+            target: cc-dashboard-ios

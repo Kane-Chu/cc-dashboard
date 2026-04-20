@@ -9,7 +9,6 @@ struct SessionListView: View {
     @State private var showConfirmSheet = false
 
     private let settings = SettingsStore()
-    private let isUITesting = ProcessInfo.processInfo.arguments.contains("--uitesting")
 
     private var sortedSessions: [Session] {
         sessions.sorted { a, b in
@@ -95,14 +94,10 @@ struct SessionListView: View {
                 }
             }
             .task {
-                if !isUITesting {
-                    await loadSessions()
-                }
+                await loadSessions()
             }
             .task(id: hasWaitingSession) {
-                if !isUITesting {
-                    await startPolling()
-                }
+                await startPolling()
             }
             .alert("错误", isPresented: .constant(errorMessage != nil)) {
                 Button("确定") { errorMessage = nil }

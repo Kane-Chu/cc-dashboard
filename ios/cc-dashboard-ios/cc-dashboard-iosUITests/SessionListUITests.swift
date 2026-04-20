@@ -7,7 +7,6 @@ final class SessionListUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["--uitesting"]
     }
 
     override func tearDownWithError() throws {
@@ -27,11 +26,6 @@ final class SessionListUITests: XCTestCase {
 
     func testOpenAndCloseSettings() {
         app.launch()
-
-        let alertOKButton = app.buttons["确定"]
-        if alertOKButton.waitForExistence(timeout: 5) {
-            alertOKButton.tap()
-        }
 
         let settingsButton = app.buttons["settings-button"]
         XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
