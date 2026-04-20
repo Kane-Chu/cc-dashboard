@@ -21,12 +21,12 @@ enum APIError: Error, LocalizedError {
 }
 
 struct DashboardAPI {
-    static func fetchSessions(baseURL: String) async throws -> [Session] {
+    static func fetchSessions(baseURL: String, session: URLSession = .shared) async throws -> [Session] {
         guard let url = URL(string: "\(baseURL)/api/sessions") else {
             throw APIError.invalidURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await session.data(from: url)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -37,7 +37,7 @@ struct DashboardAPI {
         return decoded.sessions
     }
 
-    static func sendAction(baseURL: String, sessionId: String, action: String) async throws -> ActionResponse {
+    static func sendAction(baseURL: String, sessionId: String, action: String, session: URLSession = .shared) async throws -> ActionResponse {
         guard let url = URL(string: "\(baseURL)/api/sessions/\(sessionId)/action") else {
             throw APIError.invalidURL
         }
@@ -47,7 +47,7 @@ struct DashboardAPI {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(ActionRequest(action: action))
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
@@ -63,8 +63,8 @@ struct DashboardAPI {
         return decoded
     }
 
-    static func testConnection(baseURL: String) async throws -> Bool {
-        _ = try await fetchSessions(baseURL: baseURL)
+    static func testConnection(baseURL: String, session: URLSession = .shared) async throws -> Bool {
+        _ = try await fetchSessions(baseURL: baseURL, session: session)
         return true
     }
 }
