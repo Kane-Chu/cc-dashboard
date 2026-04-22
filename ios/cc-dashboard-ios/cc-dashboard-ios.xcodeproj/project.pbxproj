@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		137F96758BAC1994C12D3643 /* SessionListUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54517FD41EAEB1F97B4C8AE1 /* SessionListUITests.swift */; };
+		199B1172E28CF3EB35CB39F6 /* AppIconTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27456E153E8F1DE6649D9394 /* AppIconTests.swift */; };
 		5089CE13D1903E7BFCBFEB8A /* SessionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C4A3173517C55B675E1E56A /* SessionListView.swift */; };
 		5A1311CC575FB52A1C2295D2 /* SessionCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A5522D7D9F32F24207E2A8 /* SessionCardView.swift */; };
 		5B68539549538D000ED15629 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0FBF12BC5D6A204A6FE780A /* Session.swift */; };
@@ -41,6 +42,7 @@
 
 /* Begin PBXFileReference section */
 		1A9BC36BFEF5B7B841BE2BED /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		27456E153E8F1DE6649D9394 /* AppIconTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconTests.swift; sourceTree = "<group>"; };
 		2C4A3173517C55B675E1E56A /* SessionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionListView.swift; sourceTree = "<group>"; };
 		2FA6313C152F05BECB184571 /* SessionModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionModelTests.swift; sourceTree = "<group>"; };
 		319696F1B31E0230EAE37B19 /* SettingsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStoreTests.swift; sourceTree = "<group>"; };
@@ -63,6 +65,7 @@
 		01C37C6B4425304985E46DAA /* cc-dashboard-iosTests */ = {
 			isa = PBXGroup;
 			children = (
+				27456E153E8F1DE6649D9394 /* AppIconTests.swift */,
 				E3B2116EFAB8E4BC5097AC58 /* DashboardAPITests.swift */,
 				2FA6313C152F05BECB184571 /* SessionModelTests.swift */,
 				319696F1B31E0230EAE37B19 /* SettingsStoreTests.swift */,
@@ -278,6 +281,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				199B1172E28CF3EB35CB39F6 /* AppIconTests.swift in Sources */,
 				A0F26A6CC5DBC0D6E269EDD9 /* DashboardAPITests.swift in Sources */,
 				E9A150CC7FCC448A0EC029CD /* SessionModelTests.swift in Sources */,
 				870ADD5F90414BD0F02F9147 /* SettingsStoreTests.swift in Sources */,
