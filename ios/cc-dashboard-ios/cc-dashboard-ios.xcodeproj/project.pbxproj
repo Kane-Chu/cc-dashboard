@@ -13,6 +13,7 @@
 		5B68539549538D000ED15629 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0FBF12BC5D6A204A6FE780A /* Session.swift */; };
 		870ADD5F90414BD0F02F9147 /* SettingsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319696F1B31E0230EAE37B19 /* SettingsStoreTests.swift */; };
 		8963908EA934DA29C6019213 /* ConfirmSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1DFC046778B7534565A3846 /* ConfirmSheetView.swift */; };
+		8C8A7BF1C0A8844066F46F60 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1A9BC36BFEF5B7B841BE2BED /* Assets.xcassets */; };
 		A0F26A6CC5DBC0D6E269EDD9 /* DashboardAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B2116EFAB8E4BC5097AC58 /* DashboardAPITests.swift */; };
 		AE6E029668CE4D81C0A566D0 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5602DBA74DAA2ED879F1F26 /* SettingsStore.swift */; };
 		B6F9EEFF901885A263AA5007 /* cc_dashboard_iosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB51B1C2957E78AECDB39D1 /* cc_dashboard_iosApp.swift */; };
@@ -39,6 +40,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		1A9BC36BFEF5B7B841BE2BED /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2C4A3173517C55B675E1E56A /* SessionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionListView.swift; sourceTree = "<group>"; };
 		2FA6313C152F05BECB184571 /* SessionModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionModelTests.swift; sourceTree = "<group>"; };
 		319696F1B31E0230EAE37B19 /* SettingsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStoreTests.swift; sourceTree = "<group>"; };
@@ -127,6 +129,7 @@
 		E523E83C116EE8820DD24EC4 /* cc-dashboard-ios */ = {
 			isa = PBXGroup;
 			children = (
+				1A9BC36BFEF5B7B841BE2BED /* Assets.xcassets */,
 				4B2637D6596A10D87A091391 /* Info.plist */,
 				D78E8B2BB4C589EFD1D3E24B /* App */,
 				EC5D3D74CECAC1C5F697AEDB /* Models */,
@@ -188,6 +191,7 @@
 			buildConfigurationList = 5BEA5060C313F79920972B6C /* Build configuration list for PBXNativeTarget "cc-dashboard-ios" */;
 			buildPhases = (
 				F5C0DD7318E0B92709292A54 /* Sources */,
+				A2C53C8DDC99D3FCD0ACD92F /* Resources */,
 			);
 			buildRules = (
 			);
@@ -234,6 +238,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A2C53C8DDC99D3FCD0ACD92F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8C8A7BF1C0A8844066F46F60 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		DF71E846762C91758AE31401 /* Sources */ = {

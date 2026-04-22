@@ -6,6 +6,8 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - cc-dashboard-ios
+    resources:
+      - cc-dashboard-ios/Assets.xcassets
     info:
       path: cc-dashboard-ios/Info.plist
       properties:
