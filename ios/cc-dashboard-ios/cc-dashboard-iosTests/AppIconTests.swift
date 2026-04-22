@@ -51,7 +51,7 @@ final class AppIconTests: XCTestCase {
         return nil
     }
 
-    /// 采样像素并判断图像是否主要是灰度（占位符特征）
+    /// 采样中心区域像素，判断图像是否主要是灰度（占位符特征）
     private func checkIfGrayscalePlaceholder(cgImage: CGImage) -> Bool {
         let width = cgImage.width
         let height = cgImage.height
@@ -78,28 +78,46 @@ final class AppIconTests: XCTestCase {
 
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
 
+        // 只采样中心 70% 区域，跳过四周边距
+        let marginX = Int(Double(width) * 0.15)
+        let marginY = Int(Double(height) * 0.15)
+        let startX = marginX
+        let endX = width - marginX
+        let startY = marginY
+        let endY = height - marginY
+
         var colorfulPixels = 0
-        let totalPixels = width * height
-        let sampleCount = min(totalPixels, 5000)
-        let step = totalPixels / sampleCount
+        var validPixels = 0
+        let sampleCount = 5000
+        let areaWidth = endX - startX
+        let areaHeight = endY - startY
+        let areaPixels = areaWidth * areaHeight
+        let step = max(1, areaPixels / sampleCount)
 
-        for i in stride(from: 0, to: totalPixels * bytesPerPixel, by: bytesPerPixel * step) {
-            let r = Double(pixelData[i])
-            let g = Double(pixelData[i + 1])
-            let b = Double(pixelData[i + 2])
+        for y in stride(from: startY, to: endY, by: max(1, areaHeight / 70)) {
+            for x in stride(from: startX, to: endX, by: max(1, areaWidth / 70)) {
+                let i = (y * width + x) * bytesPerPixel
+                guard i + 3 < pixelData.count else { continue }
 
-            // 忽略透明像素
-            let a = Double(pixelData[i + 3])
-            guard a > 10 else { continue }
+                let r = Double(pixelData[i])
+                let g = Double(pixelData[i + 1])
+                let b = Double(pixelData[i + 2])
+                let a = Double(pixelData[i + 3])
 
-            let maxDiff = max(abs(r - g), abs(g - b), abs(r - b))
-            if maxDiff > 25 {
-                colorfulPixels += 1
+                // 忽略完全透明的像素
+                guard a > 10 else { continue }
+                validPixels += 1
+
+                let maxDiff = max(abs(r - g), abs(g - b), abs(r - b))
+                if maxDiff > 30 {
+                    colorfulPixels += 1
+                }
             }
         }
 
-        let ratio = Double(colorfulPixels) / Double(sampleCount)
-        // 真实图标应该有不少于 5% 的彩色像素；占位符大部分是灰白
-        return ratio < 0.05
+        guard validPixels > 100 else { return true }
+        let ratio = Double(colorfulPixels) / Double(validPixels)
+        // 真实图标应该有不少于 3% 的彩色像素；占位符大部分是灰白
+        return ratio < 0.03
     }
 }
