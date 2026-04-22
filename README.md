@@ -117,27 +117,6 @@ cc-dashboard/
 - Chrome / Edge / Safari / Firefox 最新版
 - 推荐使用 WebKit 内核浏览器以获得最佳的 `backdrop-filter` 效果
 
-## 更新日志
-
-### v1.1.1 (2026-04-17)
-
-- 修复聊天弹窗中 base64 图片无法显示的问题（支持 transcript 中的 `image` 类型 content block）
-- 修复聊天弹窗中图片无法点击放大的问题（事件捕获阶段监听，避免被 `stopPropagation` 拦截）
-- 对超大 base64 图片增加 1MB 降级保护，避免前端渲染卡顿
-
-### v1.1.0 (2026-04-16)
-
-- 新增独立实时对话弹窗，通过主页卡片右上角气泡图标打开
-- 聊天消息支持 Markdown 格式化与代码块样式
-- 聊天图片支持点击放大预览
-- SSE 连接增加进程存活检查、文件截断重连、错误重试机制
-- 增加静态文件路径遍历防护与图片缓存安全路由
-- 优化 AppleScript 字符串转义与消息长度限制
-
-### v1.0.0
-
-- 初始版本发布，支持 Session 监控、Context 可视化、远程确认操作
-
 ## License
 
 MIT
