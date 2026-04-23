@@ -10,15 +10,10 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// Bonjour / mDNS service discovery
-let bonjourService = null;
-try {
-    const Bonjour = require('bonjour');
-    const bonjour = Bonjour();
-    bonjourService = bonjour;
-} catch (e) {
-    // bonjour optional
-}
+const { spawn } = require('child_process');
+
+// Bonjour / mDNS service discovery via macOS dns-sd
+let dnsSdProcess = null;
 const { execSync, spawnSync } = require('child_process');
 
 const PORT = process.env.PORT || 7777;
@@ -751,16 +746,14 @@ server.listen(PORT, () => {
     console.log(`Claude Code Dashboard running at http://localhost:${PORT}`);
     console.log(`API endpoint: http://localhost:${PORT}/api/sessions`);
 
-    if (bonjourService) {
-        const hostname = os.hostname();
-        bonjourService.publish({
-            name: `cc-dashboard@${hostname}`,
-            type: 'cc-dashboard',
-            protocol: 'tcp',
-            port: PORT
-        });
-        console.log(`Bonjour service published: cc-dashboard@${hostname} on port ${PORT}`);
-    }
+    const hostname = os.hostname().replace(/\.local$/i, '');
+    const serviceName = `cc-dashboard@${hostname}`;
+    dnsSdProcess = spawn('dns-sd', ['-R', serviceName, '_cc-dashboard._tcp', 'local.', String(PORT)], {
+        stdio: 'ignore',
+        detached: true
+    });
+    dnsSdProcess.unref();
+    console.log(`Bonjour service published: ${serviceName} on port ${PORT}`);
 });
 
 module.exports = { server, collectData };

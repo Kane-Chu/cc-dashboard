@@ -51,7 +51,7 @@
 		4B2637D6596A10D87A091391 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		543441AA12D4A31DF19E5CFC /* cc-dashboard-iosUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = "cc-dashboard-iosUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		54517FD41EAEB1F97B4C8AE1 /* SessionListUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionListUITests.swift; sourceTree = "<group>"; };
-		850CC1F93F551B265F489801 /* cc-dashboard-ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "cc-dashboard-ios.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		850CC1F93F551B265F489801 /* cc-dashboard-ios.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "cc-dashboard-ios.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BAB51B1C2957E78AECDB39D1 /* cc_dashboard_iosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = cc_dashboard_iosApp.swift; sourceTree = "<group>"; };
 		C1DFC046778B7534565A3846 /* ConfirmSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmSheetView.swift; sourceTree = "<group>"; };
 		CDB15CDBE10AB620F763875F /* BonjourDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BonjourDiscovery.swift; sourceTree = "<group>"; };
@@ -349,7 +349,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = NP4F3CYKZD;
 				INFOPLIST_FILE = "cc-dashboard-ios/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "cc-dashboard";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -467,7 +466,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = NP4F3CYKZD;
 				INFOPLIST_FILE = "cc-dashboard-ios/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "cc-dashboard";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

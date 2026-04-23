@@ -5,6 +5,7 @@ struct SessionListView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showErrorAlert = false
+    @State private var hasShownInitialError = false
     @State private var selectedSession: Session?
     @State private var showSettings = false
     @State private var showConfirmSheet = false
@@ -121,11 +122,13 @@ struct SessionListView: View {
         do {
             sessions = try await DashboardAPI.fetchSessions(baseURL: settings.baseURL)
             errorMessage = nil
+            hasShownInitialError = true // 成功加载后标记为已初始化
         } catch {
-            // 只在首次加载失败时弹窗（轮询失败静默处理）
-            if sessions.isEmpty && !showErrorAlert {
+            // 只在首次加载失败时弹窗一次，后续轮询静默处理
+            if !hasShownInitialError {
                 errorMessage = error.localizedDescription
                 showErrorAlert = true
+                hasShownInitialError = true
             }
         }
     }
