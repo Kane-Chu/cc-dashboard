@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var testStatus: TestStatus = .idle
+    @State private var discovery = BonjourDiscovery()
 
     enum TestStatus: Equatable {
         case idle
@@ -66,6 +67,36 @@ struct SettingsView: View {
                     }
                 }
 
+                if !discovery.discoveredServices.isEmpty {
+                    Section("局域网发现的服务") {
+                        ForEach(discovery.discoveredServices) { service in
+                            Button {
+                                settings.serverHost = service.host
+                                settings.serverPort = String(service.port)
+                                Task { await testConnection() }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "desktopcomputer")
+                                        .foregroundStyle(.blue)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(service.name)
+                                            .font(.subheadline)
+                                        Text("\(service.host):\(service.port)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if settings.serverHost == service.host
+                                        && settings.serverPort == String(service.port) {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(.green)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Section("帮助") {
                     HStack {
                         Text("使用步骤")
@@ -74,9 +105,9 @@ struct SettingsView: View {
                     .listRowBackground(Color.clear)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("1. 在电脑上安装并启动 Tailscale")
+                        Text("1. 确保电脑和手机在同一局域网")
                         Text("2. 启动 cc-dashboard server (node server.js)")
-                        Text("3. 输入电脑的 Tailscale IP (如 100.x.x.x)")
+                        Text("3. 自动发现或手动输入服务器地址")
                         Text("4. 点击测试连接验证")
                     }
                     .font(.caption)
@@ -88,13 +119,19 @@ struct SettingsView: View {
                     HStack {
                         Text("版本")
                         Spacer()
-                        Text("1.0.0")
+                        Text("1.2.0")
                             .foregroundStyle(.secondary)
                     }
                 }
             }
             .navigationTitle("设置")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                discovery.startScan()
+            }
+            .onDisappear {
+                discovery.stopScan()
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("完成") {

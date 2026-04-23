@@ -8,6 +8,17 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+
+// Bonjour / mDNS service discovery
+let bonjourService = null;
+try {
+    const Bonjour = require('bonjour');
+    const bonjour = Bonjour();
+    bonjourService = bonjour;
+} catch (e) {
+    // bonjour optional
+}
 const { execSync, spawnSync } = require('child_process');
 
 const PORT = process.env.PORT || 7777;
@@ -739,6 +750,17 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
     console.log(`Claude Code Dashboard running at http://localhost:${PORT}`);
     console.log(`API endpoint: http://localhost:${PORT}/api/sessions`);
+
+    if (bonjourService) {
+        const hostname = os.hostname();
+        bonjourService.publish({
+            name: `cc-dashboard@${hostname}`,
+            type: 'cc-dashboard',
+            protocol: 'tcp',
+            port: PORT
+        });
+        console.log(`Bonjour service published: cc-dashboard@${hostname} on port ${PORT}`);
+    }
 });
 
 module.exports = { server, collectData };

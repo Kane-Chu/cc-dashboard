@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		137F96758BAC1994C12D3643 /* SessionListUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54517FD41EAEB1F97B4C8AE1 /* SessionListUITests.swift */; };
 		199B1172E28CF3EB35CB39F6 /* AppIconTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27456E153E8F1DE6649D9394 /* AppIconTests.swift */; };
+		307DB4D7B9A2051E1839FBC9 /* BonjourDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDB15CDBE10AB620F763875F /* BonjourDiscovery.swift */; };
 		5089CE13D1903E7BFCBFEB8A /* SessionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C4A3173517C55B675E1E56A /* SessionListView.swift */; };
 		5A1311CC575FB52A1C2295D2 /* SessionCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A5522D7D9F32F24207E2A8 /* SessionCardView.swift */; };
 		5B68539549538D000ED15629 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0FBF12BC5D6A204A6FE780A /* Session.swift */; };
@@ -53,6 +54,7 @@
 		850CC1F93F551B265F489801 /* cc-dashboard-ios.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "cc-dashboard-ios.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BAB51B1C2957E78AECDB39D1 /* cc_dashboard_iosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = cc_dashboard_iosApp.swift; sourceTree = "<group>"; };
 		C1DFC046778B7534565A3846 /* ConfirmSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmSheetView.swift; sourceTree = "<group>"; };
+		CDB15CDBE10AB620F763875F /* BonjourDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BonjourDiscovery.swift; sourceTree = "<group>"; };
 		D0FBF12BC5D6A204A6FE780A /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
 		D5602DBA74DAA2ED879F1F26 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		D679139B9F08353F5CE1AF2D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -87,6 +89,7 @@
 		74ADC1FC492C244A4404569F /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				CDB15CDBE10AB620F763875F /* BonjourDiscovery.swift */,
 				DD29CD03C6CB786659A634FF /* DashboardAPI.swift */,
 				D5602DBA74DAA2ED879F1F26 /* SettingsStore.swift */,
 			);
@@ -266,6 +269,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				307DB4D7B9A2051E1839FBC9 /* BonjourDiscovery.swift in Sources */,
 				8963908EA934DA29C6019213 /* ConfirmSheetView.swift in Sources */,
 				D76BC2882F96C9A2DBE374ED /* DashboardAPI.swift in Sources */,
 				5B68539549538D000ED15629 /* Session.swift in Sources */,
@@ -344,16 +348,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				INFOPLIST_FILE = "cc-dashboard-ios/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.kane.cc-dashboard-ios";
+				PRODUCT_BUNDLE_IDENTIFIER = com.kane.ccdashboard.local;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -462,16 +464,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				INFOPLIST_FILE = "cc-dashboard-ios/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.kane.cc-dashboard-ios";
+				PRODUCT_BUNDLE_IDENTIFIER = com.kane.ccdashboard.local;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
