@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.2.1] - 2026-04-23
+
+### Features
+
+- **局域网自动发现**: iOS App 支持自动发现局域网中的 cc-dashboard 服务
+  - server.js 使用 macOS 原生 `dns-sd` 发布 Bonjour 服务
+  - iOS 端使用 `NetServiceBrowser` 扫描并展示发现的服务列表
+  - 点击自动填充服务器地址并测试连接
+- **App 名称**: 主屏幕显示名称改为 **cc-dashboard**
+
+### Fixes
+
+- 修复连接失败时的无限弹窗循环（只弹窗一次，轮询失败静默处理）
+- 修复 `bonjour` npm 包服务广播不工作的问题（改用系统 `dns-sd`）
+- 添加 `NSLocalNetworkUsageDescription` 和 `NSBonjourServices` 权限声明
+
 ## [1.2.0] - 2026-04-22
 
 ### Features
