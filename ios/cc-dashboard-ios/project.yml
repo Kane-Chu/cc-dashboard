@@ -17,6 +17,9 @@ targets:
           UIColorName: ""
           UIImageName: ""
         UIRequiresFullScreen: true
+        NSLocalNetworkUsageDescription: "cc-dashboard 需要扫描局域网中的服务器"
+        NSBonjourServices:
+          - _cc-dashboard._tcp
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kane.ccdashboard.local

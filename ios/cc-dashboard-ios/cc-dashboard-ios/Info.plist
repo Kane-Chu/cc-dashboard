@@ -18,6 +18,12 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_cc-dashboard._tcp</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>cc-dashboard 需要扫描局域网中的服务器</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
