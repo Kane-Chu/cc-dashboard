@@ -4,6 +4,7 @@ struct SessionListView: View {
     @State private var sessions: [Session] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var showErrorAlert = false
     @State private var selectedSession: Session?
     @State private var showSettings = false
     @State private var showConfirmSheet = false
@@ -99,10 +100,16 @@ struct SessionListView: View {
             .task(id: hasWaitingSession) {
                 await startPolling()
             }
-            .alert("错误", isPresented: .constant(errorMessage != nil)) {
-                Button("确定") { errorMessage = nil }
+            .alert("连接失败", isPresented: $showErrorAlert) {
+                Button("设置") {
+                    showErrorAlert = false
+                    showSettings = true
+                }
+                Button("忽略", role: .cancel) {
+                    showErrorAlert = false
+                }
             } message: {
-                Text(errorMessage ?? "")
+                Text(errorMessage ?? "无法连接到服务器")
             }
         }
     }
@@ -115,8 +122,10 @@ struct SessionListView: View {
             sessions = try await DashboardAPI.fetchSessions(baseURL: settings.baseURL)
             errorMessage = nil
         } catch {
-            if sessions.isEmpty {
+            // 只在首次加载失败时弹窗（轮询失败静默处理）
+            if sessions.isEmpty && !showErrorAlert {
                 errorMessage = error.localizedDescription
+                showErrorAlert = true
             }
         }
     }
